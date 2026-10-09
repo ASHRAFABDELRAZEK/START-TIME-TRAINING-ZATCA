@@ -309,6 +309,16 @@ tr.sel td{background:var(--accent-soft)}
 .shead-in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:12px 16px}
 .wm{display:flex;align-items:center;gap:10px;min-width:0}
 .wm-wrap{display:flex;flex-direction:column;gap:6px;min-width:0}
+.st-alerts{display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px;background:#FFF8E6;border-bottom:1px solid #F1D9A6}
+.st-alerts:empty{display:none}
+.st-al{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;line-height:1.5;padding:3px 10px;border-radius:999px;background:#fff;border:1px solid #F1D9A6;color:#5B3B00}
+.st-al.hot{background:#FDECEA;border-color:#F5B8B1;color:#8A1C12}
+.st-al.ev{background:#EAF4EE;border-color:#B7DBC4;color:#14573A}
+.st-al b{font-weight:700}
+.st-al a{color:inherit;text-decoration:underline}
+.st-al-x{margin-inline-start:auto;border:0;background:none;font-size:12px;color:#7A5A1E;cursor:pointer}
+@media (prefers-color-scheme: dark){.st-alerts{background:#2A2414;border-color:#4A3E1E}.st-al{background:#1F1B10;color:#F2D9A0;border-color:#4A3E1E}.st-al.hot{background:#3A1A16;color:#F6B4AC;border-color:#5E2A24}.st-al.ev{background:#12261B;color:#9FD8B5;border-color:#24543A}}
+
 .wm-tr{display:inline-block;align-self:flex-start;background:#B42318;color:#fff;font-size:12px;font-weight:700;line-height:1.5;padding:3px 10px;border-radius:6px;max-width:100%}
 .wm .bar{width:6px;height:42px;border-radius:3px;background:var(--accent);flex:none}
 .wm b{display:block;font-size:17px;color:var(--head);line-height:1.25}
@@ -941,6 +951,7 @@ details[open]>summary .chev{transform:rotate(225deg)}
   </div>
   <div class="strip"></div>
 </header>
+<div id="stAlerts" class="st-alerts" role="region" aria-label="تنبيهات المواعيد"></div>
 <nav class="journey" aria-label="مراحل الرحلة"><ol id="journey"></ol></nav>
 <div class="layout">
   <div class="sitefrm">
@@ -3597,7 +3608,39 @@ function guideLinksHtml(){
   const ks = guideKeys(); if (!ks.length) return "";
   return `<div class="hp-sec"><b class="small">أدلة الهيئة الرسمية لهذه الخطوة</b><ul class="glinks">${ks.map(k => { const g = ZG[k]; return `<li><a href="${g[1]}" target="_blank" rel="noopener">${g[0]}</a><span class="muted small"> · آخر تحديث ${g[2]}</span></li>`; }).join("")}</ul><div class="small muted">الروابط بتفتح موقع الهيئة الرسمي. لو الدليل اتحدث، المرجع هو النسخة اللي على الموقع.</div></div>`;
 }
+/* ===================== شريط تنبيهات المواعيد =====================
+   المواعيد محسوبة من القاعدة العامة (اللائحة): الزكاة والدخل 120 يوم بعد نهاية السنة، القيمة المضافة آخر يوم في الشهر التالي للفترة،
+   الاستقطاع يوم 10 من الشهر التالي. لو الموعد جه إجازة رسمية بيتمد لأول يوم عمل — المرجع تقويم الهيئة.
+   ST_EVENTS: قرارات/مواعيد بتدخل حيز التنفيذ — بتتحدث يدوي من هنا. */
+const ST_EVENTS = [
+  {d: "2027-02-01", t: "آخر موعد لربط الموجة 25 من الفوترة الإلكترونية (إيرادات أكبر من 187,500 ﷼ في 2022–2025)", warn: 120, act: "waveOpen"}
+];
+const ST_CAL = "https://zatca.gov.sa/ar/MediaCenter/Publications/Documents/Zakat%20Declaration%20and%20Tax%20Returns%20Calendar.pdf";
+function stDeadlines(){
+  const t0 = todayUTC(), y = new Date(t0).getUTCFullYear(), m = new Date(t0).getUTCMonth(), D = (yy, mm, dd) => Date.UTC(yy, mm, dd), endOf = (yy, mm) => D(yy, mm + 1, 0);
+  const out = [];
+  /* الزكاة وضريبة الدخل لسنة مالية تنتهي 31/12: 120 يوم = 30 أبريل */
+  [y - 1, y].forEach(fy => { const due = D(fy, 11, 31) + 120 * 864e5; out.push({due, warn: 45, t: `إقرار الزكاة وضريبة الدخل لسنة ${fy} (للسنة المنتهية 31/12)`, act: "f10"}); });
+  /* القيمة المضافة ربع سنوي: آخر يوم في الشهر التالي لنهاية الربع */
+  for (let q = -1; q <= 4; q++) { const qe = endOf(y, q * 3 - 1), d = new Date(qe), due = endOf(d.getUTCFullYear(), d.getUTCMonth() + 1), qn = ((q % 4) + 4) % 4 || 4; out.push({due, warn: 30, t: `إقرار القيمة المضافة الربع سنوي (الربع ${qn} — ${new Date(qe).getUTCFullYear()})`, act: "vat"}); }
+  /* القيمة المضافة الشهري + الاستقطاع: الشهر الحالي والسابق */
+  [m - 1, m].forEach(mm => { const pe = new Date(endOf(y, mm)), py = pe.getUTCFullYear(), pm = pe.getUTCMonth();
+    out.push({due: endOf(py, pm + 1), warn: 10, t: `إقرار القيمة المضافة الشهري (${MONTHS[pm]} ${py})`, act: "vat"});
+    out.push({due: D(py, pm + 1, 10), warn: 10, t: `نموذج الاستقطاع الشهري (${MONTHS[pm]} ${py})`, act: "wht"}); });
+  ST_EVENTS.forEach(e => out.push({due: pd(e.d), warn: e.warn || 60, t: e.t, ev: 1, act: e.act}));
+  return out.filter(x => x.due != null && x.due >= t0 && (x.due - t0) / 864e5 <= x.warn).map(x => Object.assign(x, {days: Math.round((x.due - t0) / 864e5)})).sort((a, b) => a.due - b.due);
+}
+function renderAlerts(){
+  const el = document.getElementById("stAlerts"); if (!el) return;
+  let hid = {}; try { hid = JSON.parse(sessionStorage.getItem("stAlertsHide") || "{}"); } catch (e) {}
+  const list = stDeadlines().filter(x => !hid[x.t + x.due]).slice(0, 4);
+  if (!list.length) { el.innerHTML = ""; return; }
+  el.innerHTML = list.map(x => `<span class="st-al ${x.ev ? "ev" : x.days <= 7 ? "hot" : ""}">${x.ev ? "📌" : "⏰"} <span>${x.days === 0 ? "<b>النهارده</b>" : x.days === 1 ? "<b>بكرة</b>" : `باقي <b>${x.days}</b> يوم`} — ${x.t} · آخر موعد <b class="num">${fmtD(x.due)}</b></span>${x.act ? ` <a href="#" data-act="alGo" data-v="${x.act}">${x.act === "waveOpen" ? "شوف الموجات" : "تدرّب عليه"}</a>` : ""}</span>`).join("")
+    + `<span class="st-al" style="background:none;border:0">المواعيد حسب القاعدة العامة، ولو جت إجازة بتتمد · المرجع <a href="${ST_CAL}" target="_blank" rel="noopener">تقويم الهيئة</a></span><button type="button" class="st-al-x" data-act="alHide" aria-label="إخفاء التنبيهات">إخفاء ✕</button>`;
+}
 const ACT = {
+  alGo(el, e){ if (e) e.preventDefault(); const v = el.dataset.v; if (v === "waveOpen") return ACT.waveOpen(); S.flow.logged = true; ensureInit(v); S.ret = v; go("form", 0); },
+  alHide(){ try { const h = {}; stDeadlines().forEach(x => { h[x.t + x.due] = 1; }); sessionStorage.setItem("stAlertsHide", JSON.stringify(h)); } catch (e) {} renderAlerts(); },
   xlDlg(){ DLG = {t: "xl"}; S.ui.xlT = S.ui.xlT || (S.ret || "vat"); openModal(xlHtml()); },
   xlT(el){ S.ui.xlT = el.dataset.v; save(); const m = $("#modal"); m.querySelector(".dlg").innerHTML = xlHtml(); },
   xlDl(el){ xlDownload(S.ui.xlT || "vat", el.dataset.f === "1"); },
@@ -3845,7 +3888,7 @@ function armIdle(){
 ["click", "keydown", "input", "change"].forEach(ev => document.addEventListener(ev, armIdle, true));
 
 /* ===================== التشغيل ===================== */
-render(); armIdle();
+render(); armIdle(); renderAlerts(); setInterval(renderAlerts, 36e5);
 
 </script>
 
