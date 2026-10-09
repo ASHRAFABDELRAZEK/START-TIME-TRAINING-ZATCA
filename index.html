@@ -681,6 +681,17 @@ details[open]>summary .chev{transform:rotate(225deg)}
 .trn{margin-top:26px;border:1px dashed var(--line);border-radius:8px}
 .trn>summary{cursor:pointer;padding:12px 14px;font-size:14px;color:var(--muted)}
 .trn-b{padding:6px 14px 16px}
+.rvlist .dsec summary{display:flex;align-items:center;gap:10px}
+.rvlist .dsec summary .sp{flex:1}
+.rv-btns{display:flex;flex-wrap:wrap;gap:8px}
+.rv-btns .btn{flex:1 1 220px}
+.calcsum{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 12px;display:grid;gap:6px;max-width:620px}
+.calcsum h3{margin:0 0 4px;font-size:16px}
+.cs-sec{font-size:13px;color:var(--muted)}
+.cs-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:4px 0;font-size:14px}
+.cs-row.b{font-weight:700;border:1px solid var(--accent);border-radius:6px;padding:6px 10px;margin-top:4px}
+.cs-sadad{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:6px}
+.cs-sadad>div{background:var(--surface-2);border-radius:8px;padding:8px 10px;font-size:13px}
 /* أداة «هل الضريبة قابلة للخصم؟» — أداة تدريبية خارج تصميم البوابة */
 .dedbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:18px 18px 0;padding:10px 14px;border:1px dashed var(--accent);border-radius:10px;background:var(--accent-soft);font-size:13.5px}
 .dedbar b{flex:1;min-width:200px}
@@ -2264,11 +2275,42 @@ function summaryKpis(R){
   return [["عدد أنواع الدفع المطبقة", R.count, 0, 1], ["إجمالي الدفع (14)", R.base], ["قيمة الاستقطاع (14)", R.tax], ["غرامة التأخير (15)", R.pen], ["إجمالي المستحق (16)", R.total, 1]];
 }
 function kpiHtml(items){ return `<div class="kpis">${items.map((x, i) => `<div class="kpi ${x[2] ? "hl" : ""}"><span>${x[0]}</span><b data-kpi="${i}">${x[3] ? x[1] : fmt(x[1])}</b></div>`).join("")}</div>`; }
+/* شاشة المراجعة لنموذج 10 كما في دليل المستخدم «تقديم إقرار الزكاة للمنشآت» (25/08/2026): أقسام قابلة للفتح + «تعديل» لكل قسم،
+   أزرار الإرفاق وتنزيل نموذج الاستمارة، ثم الإقرار و«تقديم». الفحص التدريبي تحتها كإضافة تعليمية. */
+function f10ReviewScreen(R, li, can){
+  const C = R.$C, st = id => FORM_STEPS.findIndex(x => x.id === id);
+  const kv2 = pairs => `<dl class="kv2">${pairs.filter(Boolean).map(([l, v]) => `<div><dt>${l}</dt><dd class="num">${fmt(v)}</dd></div>`).join("")}</dl>`;
+  const sec = (key, title, body, step) => `<details class="dsec rv" data-dk="rv_${key}"><summary><b>${title}</b><span class="sp"></span><button type="button" class="linkbtn" data-act="step" data-i="${step}">تعديل</button><span class="chev" aria-hidden="true"></span></summary>${body}</details>`;
+  const bs = (k, i) => R.bs && R.bs[k] ? R.bs[k][i] : 0;
+  const yn = v => v === "yes" ? "نعم" : "لا";
+  const secs = [
+    sec("inc", "قائمة الدخل", kv2([["إجمالي إيرادات التشغيل (2004)", R["2004"]], ["إجمالي الإيرادات الأخرى (2008)", R["2008"]], ["إجمالي الإيرادات (2009)", R["2009"]]]), st("inc")),
+    sec("cost", "التكاليف والمصاريف", kv2([["إجمالي المصاريف (2031)", R["2031"]], ["إجمالي التكاليف والمصاريف (2032)", R["2032"]], ["صافي الربح / (الخسارة) الدفتري (2033)", R["2033"]]]), st("inc")),
+    sec("adj", "التعديلات", kv2([["صافي الربح المعدل الزكوي (3010)", R["3010"]], C.tpt !== "S" ? ["صافي الربح المعدل الضريبي (3011)", R["3011"]] : null]), st("adj")),
+    sec("zak", "الوعاء الزكوي", kv2([["إجمالي الإضافات (4011)", R["4011"]], ["إجمالي الحسميات (4019)", R["4019"]], ["الوعاء الزكوي (4021)", R.base || 0], ["إجمالي الزكاة المستحقة (4023)", R.zakat]]), st("zak")),
+    sec("tax", "الوعاء الضريبي", kv2([["الوعاء الخاضع للضريبة (5012)", R["5012"] || 0], ["إجمالي ضريبة الدخل المستحقة (5015)", R.tax]]), st("tax")),
+    sec("ast", "أصول", kv2([["إجمالي الأصول المتداولة (6009) — آخر المدة", bs(6009, 1)], ["إجمالي الأصول غير المتداولة (6015) — آخر المدة", bs(6015, 1)], ["إجمالي الأصول — آخر المدة", R.TA ? R.TA[1] : 0]]), st("bs")),
+    sec("lia", "الخصوم وحقوق الملكية", kv2([["إجمالي الخصوم المتداولة (6026) — آخر المدة", bs(6026, 1)], ["إجمالي الالتزامات غير المتداولة (6032) — آخر المدة", bs(6032, 1)], ["إجمالي حقوق الملكية (6037) — آخر المدة", bs(6037, 1)]]), st("bs")),
+    sec("q1", "1. هل لديك أي عمليات مع أطراف ذوي علاقة او أطراف خاضعين لسيطرة مشتركة ؟", `<p style="margin:8px 4px">${yn(S.tp.rpt)}</p>`, st("tp")),
+    sec("q2", "2. هل أنت جزء من مجموعة متعددة الجنسيات - المجموعة المؤهلة لتقرير كل دولة ؟ ( تحتاج للجواب بنعم إذا كان مجموع الإيرادات الموحدة للمجموعة تزيد عن 3.2 مليار ﷼ )", `<p style="margin:8px 4px">${yn(S.tp.mnc)}</p>`, st("tp"))
+  ].join("");
+  const has = t => S.att.some(a => a.type === t);
+  return `<section class="card"><div class="card-h"><h2>مراجعة ${RET_NAME.f10}</h2><span class="pill gray">${esc(periodInfo("f10").label)}</span></div>
+    <div class="card-b" style="display:grid;gap:14px">
+      <div class="dpanel rvlist">${secs}</div>
+      <div class="rv-btns"><button type="button" class="btn green" data-act="attach" data-at="RC">إرفاق الإقرار المصادق عليه${has("RC") ? " ✓" : ""}</button><button type="button" class="btn green" data-act="attach" data-at="FS">إرفاق ميزانية معتمدة${has("FS") ? " ✓" : ""}</button><button type="button" class="btn green" data-act="f10Form">⬇ قم بتنزيل نموذج الاستمارة</button></div>
+      <label class="chk"><input type="checkbox" id="declCb" data-act="decl" ${S.decl ? "checked" : ""}><span>أقر بأن المعلومات صحيحة و أتحمل مسؤولية صحتها</span></label>
+      <details class="trn" ${li ? "open" : ""}><summary>فحص تدريبي قبل التقديم (إضافة من المحاكي — مش موجود في البوابة)</summary><div class="trn-b">${kpiHtml(summaryKpis(R))}<ul class="vlist" style="margin-top:10px">${li}</ul></div></details>
+      <div class="note warn small">في المنصة الحقيقية مفيش رجوع بعد «تقديم». أي تصحيح بعده بيكون بطلب تعديل إقرار.</div>
+    </div>
+    <div class="footer-nav"><div class="grp"><button type="button" class="btn" data-act="backForm">رجوع للنموذج</button></div><div class="grp"><button type="button" class="btn green" id="submitBtn" data-act="submit" ${can ? "" : "disabled"}>تقديم</button></div></div></section>`;
+}
 function reviewScreen(){
   const R = recalc(), v = validationFor(R), bad = v.filter(x => x.lvl === "bad").length;
   const ic = {bad: "خطأ", warn: "تنبيه", info: "ملاحظة", ok: "سليم"};
   const li = v.map(x => `<li><span class="pill ${x.lvl}">${ic[x.lvl]}</span><span style="flex:1">${esc(x.msg)}</span>${x.lvl === "bad" || x.lvl === "warn" ? `<button type="button" class="linkbtn" data-act="fix" data-s="${x.step}">تعديل</button>` : ""}</li>`).join("");
   const can = bad === 0 && S.decl;
+  if (S.ret === "f10") return f10ReviewScreen(R, li, can);
   return `<section class="card"><div class="card-h"><h2>مراجعة ${RET_NAME[S.ret]}</h2><span class="pill gray">${esc(periodInfo(S.ret).label)}</span></div>
     <div class="card-b" style="display:grid;gap:14px">${kpiHtml(summaryKpis(R))}${S.ret === "f10" ? f10SummaryTable(R) : ""}
       <div><h3 style="margin:0 0 8px;font-size:15px">نتيجة الفحص</h3><ul class="vlist">${li}</ul></div>
@@ -2295,6 +2337,34 @@ function submitNow(){
   S.ui.lastSub = sub.id; S.decl = false;
   closeModal(); go("done");
 }
+/* «ملخص الإحتساب» بعد تقديم نموذج 10 كما في دليل المستخدم (25/08/2026): رقم سداد للزكاة ورقم سداد لضريبة الدخل */
+function f10CalcSummary(sub, bill){
+  const p = sub.parts || {}, z = r2(p.zakat || 0), t = r2(p.tax || 0), base = bill ? String(bill.no).replace(/\D/g, "") : rnd(10);
+  const sadad = suf => (base + suf).slice(-11);
+  const row = (l, v, b) => `<div class="cs-row${b ? " b" : ""}"><span>${l}</span><span class="num">${fmt(v)}</span></div>`;
+  return `<div class="calcsum"><h3>ملخص الإحتساب</h3>
+    <div class="cs-sec">فروق الزكاة</div>${row("الزكاة المستحقة على الشريك السعودي", z)}${row("قيمة الدفعات للعقود المفرج عنها", 0)}${row("صافي الزكاة المستحقة", z)}
+    ${row("الإجمالي المستحق", r2(z + t), 1)}
+    <div class="cs-sadad"><div><b>سداد</b> رقم سداد: <span class="num">${z > 0.004 ? sadad("1") : "—"}</span><br><span class="small">صافي الزكاة المستحقة: ${fmt(z)} ﷼</span></div>
+    <div><b>سداد</b> رقم سداد: <span class="num">${t > 0.004 ? sadad("2") : "—"}</span><br><span class="small">إجمالي ضريبة الدخل المستحقة: ${fmt(t)} ﷼</span></div></div>
+    <div class="small muted">في البوابة الزكاة والضريبة ليهم رقمين سداد منفصلين. في المحاكي الفاتورة التدريبية واحدة بالإجمالي، وأرقام السداد دي تدريبية.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${bill ? `<button type="button" class="btn green" data-act="bills">الفاتورة</button>` : ""}<button type="button" class="btn green" data-act="f10Form">تحميل النموذج</button></div></div>`;
+}
+function amendReqHtml(sb, err){
+  const r = S.ui.amReq || {};
+  return dlgHtml("طلب تعديل إقرار الزكاة", `
+   <div class="note small">في إقرار الزكاة التعديل مش مباشر: بتقدّم <b>طلب تعديل</b> عبر البوابة مع المستندات، ولو الهيئة وافقت عندك <b>30 يوم</b> تقدّم فيهم الإقرار المعدل، ولو فاتوا لازم تقدّم طلب جديد (المادتين 103 و104 من لائحة جباية الزكاة، والدليل الإرشادي لبنود الإقرار الزكوي — مارس 2026). <span class="muted">(خطوة تدريبية)</span></div>
+   <div class="grid2" style="margin-top:12px">
+    <div class="fld"><label>الإقرار</label><input value="${esc(sb.label + " — " + sb.period)}" readonly></div>
+    <div class="fld"><label>اتجاه التعديل</label><select id="amDir"><option value="up" ${r.dir !== "down" ? "selected" : ""}>بالزيادة (زكاة أكتر)</option><option value="down" ${r.dir === "down" ? "selected" : ""}>بالنقص (زكاة أقل)</option></select></div>
+    <div class="fld" style="grid-column:1/-1"><label>سبب التعديل</label><textarea id="amWhy" rows="3" placeholder="مثال: بند إضافة للوعاء اتنسى، أو تعديل في القوائم المالية المعتمدة">${esc(r.why || "")}</textarea></div></div>
+   <div class="ded-g" style="margin-top:10px"><h4>شروط إضافية لو التعديل بالنقص</h4>
+    <label class="chk"><input type="checkbox" id="amC1" ${r.c1 ? "checked" : ""}><span>الطلب قبل صدور الربط الزكوي</span></label>
+    <label class="chk"><input type="checkbox" id="amC2" ${r.c2 ? "checked" : ""}><span>مدة التقادم لسه ما انتهتش</span></label>
+    <label class="chk"><input type="checkbox" id="amC3" ${r.c3 ? "checked" : ""}><span>مرفق المستندات والمسوغات اللي تقبلها الهيئة</span></label></div>
+   ${err ? `<div class="note bad small" style="margin-top:8px">${err}</div>` : ""}`,
+   `<button type="button" class="btn" data-act="closeModal">إلغاء</button><button type="button" class="btn primary" data-act="amSend">إرسال الطلب</button>`);
+}
 function doneScreen(){
   const sub = S.flow.subs.find(x => x.id === S.ui.lastSub) || S.flow.subs[S.flow.subs.length - 1];
   if (!sub) return `<section class="card"><div class="card-b">ما فيش إقرار مقدم.</div></section>`;
@@ -2302,7 +2372,7 @@ function doneScreen(){
   const msg = sub.amount > 0.004 ? `تم إصدار فاتورة سداد بمبلغ <b class="num">${fmt(sub.amount)}</b> ريال.` : (sub.amount < -0.004 ? `الصافي بالسالب (<b class="num">${fmt(sub.amount)}</b>): رصيد دائن. تقدر تطلب استرداده أو ترحله للفترة القادمة.` : "المستحق صفر، فما اتصدرتش فاتورة.");
   return `<section class="card"><div class="card-b"><div class="success"><div class="tick"></div><div><h2 style="margin:0 0 6px;font-size:19px">تم تقديم الإقرار بنجاح (تدريبي)</h2>
     <dl class="bill" style="border:0;padding:0;display:grid"><dl style="display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;margin:0 0 10px"><dt class="muted">الإقرار</dt><dd style="margin:0;font-weight:600">${sub.label}</dd><dt class="muted">الفترة</dt><dd style="margin:0;font-weight:600">${esc(sub.period)}</dd><dt class="muted">الرقم المرجعي</dt><dd class="num" style="margin:0;font-weight:700;direction:ltr;text-align:right">${sub.ref}</dd><dt class="muted">تاريخ التقديم</dt><dd class="num" style="margin:0;font-weight:600">${sub.date}</dd></dl></dl>
-    <p style="margin:0 0 12px">${msg}</p>
+    <p style="margin:0 0 12px">${msg}</p>${sub.type === "f10" ? f10CalcSummary(sub, bill) : ""}
     <div style="display:flex;gap:8px;flex-wrap:wrap">${bill ? `<button type="button" class="btn primary" data-act="bills">عرض الفاتورة</button>` : ""}<button type="button" class="btn" data-act="statement">كشف الحساب</button><button type="button" class="btn" data-act="returns">قائمة الإقرارات</button></div></div></div></div></section>`;
 }
 function billScreen(){
@@ -3031,11 +3101,11 @@ function drawDebt(){
    <div style="margin-top:10px"><button type="button" class="btn sm" data-act="dRowAdd">+ إضافة سطر</button></div>`;
   openModal(dlgHtml("الديون وما في حكمها (4007) — اللائحة السابقة", body, `<button type="button" class="btn" data-act="closeModal">إلغاء</button><button type="button" class="btn primary" data-act="dSave">حفظ</button>`));
 }
-function openAttach(){
-  const types = {FS: "القوائم المالية المعتمدة (قوائم)", TP: "نموذج الإفصاح عن المعاملات", OT: "مرفق آخر"};
+function openAttach(pre){
+  const types = {FS: "الميزانية / القوائم المالية المعتمدة", RC: "الإقرار المصادق عليه", TP: "نموذج الإفصاح عن المعاملات", OT: "مرفق آخر"};
   const list = S.att.map((a, i) => `<tr><td>${types[a.type] || a.type}</td><td>${esc(a.name)}</td><td class="n">${a.size ? Math.round(a.size / 1024) + " KB" : "—"}</td><td><button type="button" class="xbtn" data-act="attDel" data-i="${i}" aria-label="حذف">×</button></td></tr>`).join("");
   const body = `<div class="note small">لازم ترفق القوائم المالية المعتمدة قبل التقديم. الملف بيتقرأ اسمه فقط في المحاكي ولا بيتحمل ولا بيتبعت لأي مكان.</div>
-   <div class="grid2" style="margin-top:12px"><div class="fld"><label>نوع المرفق</label><select id="attType">${Object.keys(types).map(k => `<option value="${k}">${types[k]}</option>`).join("")}</select></div><div class="fld"><label>الملف</label><input type="file" id="attFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg"></div></div>
+   <div class="grid2" style="margin-top:12px"><div class="fld"><label>نوع المرفق</label><select id="attType">${Object.keys(types).map(k => `<option value="${k}" ${pre === k ? "selected" : ""}>${types[k]}</option>`).join("")}</select></div><div class="fld"><label>الملف</label><input type="file" id="attFile" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg"></div></div>
    <div style="margin:10px 0"><button type="button" class="btn sm" data-act="attSample">إرفاق ملف تجريبي بدون اختيار ملف</button></div>
    ${S.att.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>النوع</th><th>الملف</th><th class="n">الحجم</th><th></th></tr></thead><tbody>${list}</tbody></table></div>` : `<p class="muted">ما فيش مرفقات.</p>`}`;
   openModal(dlgHtml("المرفقات", body, `<button type="button" class="btn primary" data-act="closeModal">تم</button>`));
@@ -3542,7 +3612,16 @@ const ACT = {
   newWht(){ const r = retRows(["wht"]).find(x => x.st === "ready" && !x.annual); ACT.open({dataset: {t: "wht", adv: r ? (r.adv || 0) : 0}}); },
   open(el){ const t = el.dataset.t; S.ui.amendOf = null; ensureInit(t); S.ui.whtAnnual = false; if (t === "wht") S.wht.agree = false; const adv = +el.dataset.adv || 0; if (adv) advanceState(t, adv); S.step = 0; S.decl = false; go("form", 0); },
   viewSub(el){ S.ui.lastSub = el.dataset.id; go("done"); },
-  amend(el){ const sb = S.flow.subs.find(x => x.id === el.dataset.id); if (!sb) return; ensureInit(sb.type); S.ui.amendOf = sb.id; S.step = 0; S.decl = false; go("form", 0); toast("وضع التعديل: الأرقام السابقة محفوظة، عدّل اللي محتاجه وقدّم الإقرار المعدل. الفرق هو اللي بيتفوتر."); },
+  amSend(){ const sb = S.flow.subs.find(x => x.id === (DLG || {}).id); if (!sb) return closeModal();
+    const r = S.ui.amReq = {dir: $("#amDir").value, why: $("#amWhy").value.trim(), c1: $("#amC1").checked, c2: $("#amC2").checked, c3: $("#amC3").checked};
+    if (!r.why) { $("#modal .dlg").innerHTML = amendReqHtml(sb, "اكتب سبب التعديل."); return; }
+    if (!r.c3) { $("#modal .dlg").innerHTML = amendReqHtml(sb, "لازم ترفق المستندات اللي تدعم التعديل."); return; }
+    if (r.dir === "down" && !(r.c1 && r.c2)) { $("#modal .dlg").innerHTML = amendReqHtml(sb, "طلب التعديل بالنقص بيترفض لو الربط صدر أو مدة التقادم انتهت."); return; }
+    S.ui.amOk = Object.assign(S.ui.amOk || {}, {[sb.id]: Date.now()}); S.ui.amReq = {}; save(); closeModal();
+    toast("تمت الموافقة على طلب التعديل (تدريبي). قدّم الإقرار المعدل خلال 30 يوم."); ACT.amend({dataset: {id: sb.id}}); },
+  amend(el){ const sb = S.flow.subs.find(x => x.id === el.dataset.id); if (!sb) return;
+    /* الزكاة: طلب تعديل لازم يتوافق عليه الأول (المادتين 103 و104 من لائحة جباية الزكاة)، وبعد الموافقة 30 يوم لتقديم الإقرار المعدل */
+    if (sb.type === "f10" && !(S.ui.amOk || {})[sb.id]) { DLG = {t: "amreq", id: sb.id}; openModal(amendReqHtml(sb)); return; } ensureInit(sb.type); S.ui.amendOf = sb.id; S.step = 0; S.decl = false; go("form", 0); toast("وضع التعديل: الأرقام السابقة محفوظة، عدّل اللي محتاجه وقدّم الإقرار المعدل. الفرق هو اللي بيتفوتر."); },
   redo(el){ const id = el.dataset.id; const nos = S.flow.bills.filter(b => b.sub === id).map(b => b.no); S.flow.subs = S.flow.subs.filter(s => s.id !== id); S.flow.bills = S.flow.bills.filter(b => b.sub !== id); S.flow.pays = S.flow.pays.filter(p => !nos.includes(p.bill)); toast("اتحذف الإقرار التدريبي، تقدر تقدمه من جديد"); render(); save(); },
   step(el){ S.step = +el.dataset.i; go("form", S.step); },
   vdecl(el){ S.decl = !!el.checked; const b = $("#vsubmit"); if (b) b.disabled = !S.decl; save(); },
@@ -3556,7 +3635,8 @@ const ACT = {
   fixv(el){ closeModal(); go("form", +el.dataset.s); },
   next(){ stepNext(1); }, prev(){ stepNext(-1); }, skip(){ stepNext(1); },
   backForm(){ go("form", S.step); },
-  attach(){ openAttach(); },
+  attach(el){ openAttach(el && el.dataset ? el.dataset.at : null); },
+  f10Form(){ xlDownload("f10", true); },
   terms(el){ S.terms = el.checked; save(); },
   decl(el){ S.decl = el.checked; const b = $("#submitBtn"); const bad = validationFor(recalc()).some(x => x.lvl === "bad"); if (b) b.disabled = !(S.decl && !bad); save(); },
   fix(el){ const s = el.dataset.s; if (s === "attach") return openAttach(); if (S.ret === "f10") { const i = FORM_STEPS.findIndex(x => x.id === s); go("form", i < 0 ? 0 : i); } else go("form", +s || 0); },
