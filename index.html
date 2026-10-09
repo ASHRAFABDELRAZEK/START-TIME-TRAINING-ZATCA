@@ -3636,7 +3636,7 @@ function renderAlerts(){
   const list = stDeadlines().filter(x => !hid[x.t + x.due]).slice(0, 4);
   if (!list.length) { el.innerHTML = ""; return; }
   el.innerHTML = list.map(x => `<span class="st-al ${x.ev ? "ev" : x.days <= 7 ? "hot" : ""}">${x.ev ? "📌" : "⏰"} <span>${x.days === 0 ? "<b>النهارده</b>" : x.days === 1 ? "<b>بكرة</b>" : `باقي <b>${x.days}</b> يوم`} — ${x.t} · آخر موعد <b class="num">${fmtD(x.due)}</b></span>${x.act ? ` <a href="#" data-act="alGo" data-v="${x.act}">${x.act === "waveOpen" ? "شوف الموجات" : "تدرّب عليه"}</a>` : ""}</span>`).join("")
-    + `<span class="st-al" style="background:none;border:0">المواعيد حسب القاعدة العامة، ولو جت إجازة بتتمد · المرجع <a href="${ST_CAL}" target="_blank" rel="noopener">تقويم الهيئة</a></span><button type="button" class="st-al-x" data-act="alHide" aria-label="إخفاء التنبيهات">إخفاء ✕</button>`;
+    + `<span class="st-al" style="background:none;border:0">الأحوط تقدّم وتسدد قبل الموعد المكتوب، وما تعتمدش على أي تمديد إلا بإعلان رسمي · المرجع <a href="${ST_CAL}" target="_blank" rel="noopener">تقويم الهيئة</a></span><button type="button" class="st-al-x" data-act="alHide" aria-label="إخفاء التنبيهات">إخفاء ✕</button>`;
 }
 const ACT = {
   alGo(el, e){ if (e) e.preventDefault(); const v = el.dataset.v; if (v === "waveOpen") return ACT.waveOpen(); S.flow.logged = true; ensureInit(v); S.ret = v; go("form", 0); },
