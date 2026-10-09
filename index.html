@@ -305,6 +305,8 @@ tr.sel td{background:var(--accent-soft)}
 .shead{background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 2px 4px rgba(16,24,40,.06)}
 .shead-in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:12px 16px}
 .wm{display:flex;align-items:center;gap:10px;min-width:0}
+.wm-wrap{display:flex;flex-direction:column;gap:6px;min-width:0}
+.wm-tr{display:inline-block;align-self:flex-start;background:#B42318;color:#fff;font-size:12px;font-weight:700;line-height:1.5;padding:3px 10px;border-radius:6px;max-width:100%}
 .wm .bar{width:6px;height:42px;border-radius:3px;background:var(--accent);flex:none}
 .wm b{display:block;font-size:17px;color:var(--head);line-height:1.25}
 .wm small{display:block;font-size:11.5px;color:var(--muted);direction:ltr;text-align:right;line-height:1.25}
@@ -354,7 +356,7 @@ tr.sel td{background:var(--accent-soft)}
 .or::before,.or::after{content:"";flex:1;height:1px;background:#E5E7EB}
 .lg-art{position:relative;overflow:hidden;background:linear-gradient(160deg,#0D121C,#14573A 70%,#1B8354);display:grid;place-items:center;color:#fff;min-height:220px}
 .lg-art::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 2px,transparent 2px 40px)}
-.lg-art .wm{position:relative}
+.lg-art .wm,.lg-art .wm-wrap{position:relative}
 .lg-art .wm b{color:#fff;font-size:22px}
 .lg-art .wm small{color:#D2D6DB}
 .lg-art .wm .bar{background:#fff}
@@ -916,6 +918,7 @@ details[open]>summary .chev{transform:rotate(225deg)}
       <button class="tbtn" id="explainBtn" aria-pressed="false" type="button">وضع الشرح</button>
       <button class="tbtn" data-act="quiz" type="button">اختبر نفسك</button>
       <button class="tbtn" data-act="waveOpen" type="button">موجات الربط</button>
+      <button class="tbtn" data-act="xlDlg" type="button">قوالب Excel</button>
       <button class="tbtn" data-act="json" type="button">نسخ JSON</button>
       <button class="tbtn" data-act="reset" type="button">إعادة البدء</button>
     </div>
@@ -1199,7 +1202,7 @@ const G = {
  search:{t:"المرحلة 1: البحث في جوجل",p:"الرحلة الحقيقية تبدأ من محرك البحث (جوجل). المهم هنا تختار الموقع الرسمي مش أي موقع يشبهه.",ol:["العبارة «الزكاة والدخل تسجيل الدخول» مكتوبة جاهزة في خانة البحث، اضغط بحث.","اقرأ النطاق (الدومين) تحت اسم كل نتيجة قبل ما تضغط.","النطاق الرسمي ينتهي بـ gov.sa وهو zatca.gov.sa.","ابعد عن النتائج المعنونة «إعلان» وأي موقع يطلب كلمة مرورك أو يعرض يقدم الإقرار بالنيابة بمقابل."],tips:["جرّب تضغط على نتيجة مزيفة لتشوف الفخ، ثم ارجع واختار النتيجة الصح."]},
  home:{t:"المرحلة 2: الصفحة الرئيسية للهيئة",p:"دي الواجهة العامة للموقع. فيها أبرز الخدمات الزكوية والضريبية والجمركية.",ol:["زر «تسجيل الدخول» في أعلى الصفحة يوديك لصفحة الدخول.","«تقديم إقرار الزكاة للمنشآت» تحت الخدمات الزكوية بيحولك للدخول برضه.","اضغط «كيف تتحقق؟» فوق عشان تراجع علامات الموقع الرسمي."],tips:["الصفحة العامة ما بتطلب منك أي بيانات سرية. أي طلب لكلمة المرور قبل صفحة الدخول الرسمية معناه موقع مشبوه."]},
  cover:{t:"المرحلة 3: صفحة الدخول (الخدمات والمنصات)",p:"هنا بتختار الخدمة اللي هتدخل لها. الزكاة وضريبة الدخل والقيمة المضافة والاستقطاع كلها تحت «خدمات الزكاة والضريبة».",ol:["تبويب «الخدمات» فيه الزكاة والضريبة والجمارك وفسح.","تبويب «المنصات» فيه زكاتي وفاتورة والمزادات والتصرفات العقارية.","اضغط «خدمات الزكاة و الضريبة» للانتقال لشاشة تسجيل الدخول."]},
- login:{t:"المرحلة 4: تسجيل الدخول",p:"البوابة بتفتح بإسم المستخدم وكلمة المرور، وبعدها رمز تحقق بيوصل على الجوال المسجل.",ol:["اسم المستخدم هو الرقم المميز أو رقم الحساب في البوابة.","كلمة المرور بتاعة حساب المنشأة أو المفوض.","رمز التحقق (OTP) اللي وصل على الجوال."],tips:["في المحاكي الحقول معبأة بقيم تجريبية ولا يُحفظ شيء. لا تكتب بياناتك الحقيقية.","كل محاسب في المكتب يشتغل بحساب مفوض خاص بيه، وما يستخدمش حساب صاحب المنشأة.","في خطوة رمز التحقق هنا أي 4 أرقام تنفع، أو اضغط «تعبئة تلقائية». في المنصة الحقيقية الرمز بيوصل على الجوال المسجل."]},
+ login:{t:"المرحلة 4: تسجيل الدخول",p:"البوابة بتفتح بإسم المستخدم وكلمة المرور، وبعدها رمز تحقق بيوصل على الجوال المسجل.",ol:["اسم المستخدم هو الرقم المميز أو رقم الحساب في البوابة.","كلمة المرور بتاعة حساب المنشأة أو المفوض.","رمز التحقق (OTP) اللي وصل على الجوال."],tips:["في المحاكي الحقول معبأة بقيم تجريبية ولا يُحفظ شيء. لا تكتب بياناتك الحقيقية.","كل محاسب في المكتب يشتغل بحساب مفوض خاص بيه، وما يستخدمش حساب صاحب المنشأة.","في خطوة رمز التحقق الرمز تدريبي ثابت (1234) ومقفول. في المنصة الحقيقية الرمز بيوصل على الجوال المسجل."]},
  dash:{t:"المرحلة 5: لوحة البيانات",p:"بعد الدخول بتلاقي القائمة الجانبية في البوابة الحقيقية فيها 4 عناصر بس: لوحة البيانات، الإقرارات، تقسيط الزكاة والضرائب، الإعتراضات والمراجعات.",ol:["افتح «الإقرارات» عشان تقدم أو تعدل إقرار.","«تقسيط الزكاة والضرائب» لطلبات التقسيط.","«الإعتراضات والمراجعات» لمتابعة الاعتراضات.","العناصر الباقية في القائمة (فاتورة السداد، كشف الحساب، خريطة الإقرارات) أدوات تدريبية لتوضيح ما بعد التقديم، وليست من قائمة البوابة."],tips:["لو سيبت الصفحة فترة طويلة هتظهر رسالة انتهاء الجلسة. وإقرار نموذج 10 المعدل ما بيتحفظش كمسودة، فلا تفقد بياناتك."]},
  inst:{t:"تقسيط الزكاة والضرائب",p:"قسم لطلب تقسيط المبالغ المستحقة ومتابعة الطلبات.",ol:["الشاشة هنا مبسطة لأغراض التدريب.","شروط التقسيط وعدد الدفعات تحددها الهيئة وتتغير."]},
  obj:{t:"الإعتراضات والمراجعات",p:"قسم لتقديم الاعتراضات ومتابعتها.",ol:["الشاشة هنا مبسطة لأغراض التدريب.","للاعتراض مدد نظامية تبدأ من تاريخ الإخطار بالقرار."]},
@@ -2116,7 +2119,7 @@ function chromeHtml(){
   const gtop = `<div class="gtop"><div class="gtop-in"><span class="gtxt"><span class="sq" aria-hidden="true"></span>نموذج تدريبي مستقل — ليس موقع الهيئة ولا موقعاً حكومياً</span><span class="gtools"><button type="button" class="lnk" data-act="verify">كيف تتحقق؟</button><span>English</span></span></div></div>`;
   if (scr === "login" || scr === "form") return gtop;
   if (scr === "search") return "";
-  const wm = `<div class="wm"><span class="bar" aria-hidden="true"></span><div><b>هيئة الزكاة والضريبة والجمارك</b><small>Zakat, Tax and Customs Authority</small></div></div>`;
+  const wm = `<div class="wm-wrap"><span class="wm-tr" role="note">موقع تدريبي خاص بالتدريب على رفع الإقرارات فقط — ليس له أي علاقة بهيئة الزكاة والضريبة والجمارك</span><div class="wm"><span class="bar" aria-hidden="true"></span><div><b>هيئة الزكاة والضريبة والجمارك</b><small>Zakat, Tax and Customs Authority</small></div></div></div>`;
   const nav = `<ul class="snav" aria-hidden="true">${["عن الهيئة","الخدمات الإلكترونية","الأنظمة واللوائح","التواصل الإعلامي","مركز المعرفة"].map(x => `<li>${x}</li>`).join("")}</ul>`;
   const act = logged
     ? `<div class="sact"><span class="sitem" aria-hidden="true">${MAG}<span>البحث</span></span></div>`
@@ -2140,9 +2143,9 @@ function coverScreen(){
 }
 function loginScreen(){
   const step = S.ui.loginStep || 0;
-  const wm = `<div class="wm"><span class="bar" aria-hidden="true"></span><div><b>هيئة الزكاة والضريبة والجمارك</b><small>Zakat, Tax and Customs Authority</small></div></div>`;
+  const wm = `<div class="wm-wrap"><span class="wm-tr" role="note">موقع تدريبي خاص بالتدريب على رفع الإقرارات فقط — ليس له أي علاقة بهيئة الزكاة والضريبة والجمارك</span><div class="wm"><span class="bar" aria-hidden="true"></span><div><b>هيئة الزكاة والضريبة والجمارك</b><small>Zakat, Tax and Customs Authority</small></div></div></div>`;
   const form = step === 0 ?
-    `<h1>تسجيل الدخول</h1><p class="sub">مرحبًا بك في التجربة الرقمية لـهيئة الزكاة والضريبة والجمارك</p>
+    `<h1>تسجيل الدخول</h1><p class="sub">محاكي تدريبي — بيانات الدخول ثابتة ومقفولة، وما ينفعش تكتب فيها بياناتك الحقيقية</p>
      <div><label for="uname">الرقم المميز أو البريد الإلكتروني <i>*</i></label><input class="in" id="uname" value="trainee@training.test" readonly autocomplete="off"></div>
      <div><label for="upass">كلمة المرور <i>*</i></label><input class="in" id="upass" type="password" value="training" readonly autocomplete="off"></div>
      <button type="button" class="lnk" data-act="soon">هل نسيت كلمة المرور أو اسم المستخدم؟</button>
@@ -2153,8 +2156,8 @@ function loginScreen(){
      <button type="button" class="lnk" data-act="soon">الانتقال إلى شاشة تسجيل الدخول القديمة</button>
      <div style="font-size:14px">لا تملك حساب؟ <button type="button" class="lnk" data-act="soon">تسجيل جديد</button></div>
      <div class="lg-foot"><span>الرحلات التعليمية</span><span>أمن المعلومات</span><span>سياسة الخصوصية</span></div>` :
-    `<h1>رمز التحقق</h1><p class="sub">أدخل رمز التحقق المرسل إلى جوالك</p>
-     <div class="otp">${[0,1,2,3].map(i => `<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="رقم ${i + 1}" autocomplete="off">`).join("")}</div>
+    `<h1>رمز التحقق</h1><p class="sub">رمز تحقق تدريبي ثابت (1234) — ما فيش رسائل بتتبعت لأي جوال</p>
+     <div class="otp">${[0,1,2,3].map(i => `<input inputmode="numeric" maxlength="1" data-otp="${i}" aria-label="رقم ${i + 1}" autocomplete="off" value="${i + 1}" readonly>`).join("")}</div>
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="sbtn" data-act="loginOk">تحقق ودخول</button><button type="button" class="btn" data-act="otpFill">تعبئة تلقائية</button><button type="button" class="btn" data-act="loginBack">رجوع</button></div>`;
   return `<section class="lg"><div class="lg-form lg">${form}</div><div class="lg-art" aria-hidden="true">${wm}</div></section>`;
 }
@@ -3237,7 +3240,265 @@ function waveHtml(){
 }
 function waveDraw(){ const m = $("#modal"); if (m.hidden || !DLG || DLG.t !== "wave") return; const a = document.activeElement, id = a && a.dataset ? a.dataset.wrev : null, pos = a && a.selectionStart; m.querySelector(".dlg").innerHTML = waveHtml(); if (id) { const n = m.querySelector(`[data-wrev="${id}"]`); if (n) { n.focus({preventScroll: true}); try { n.setSelectionRange(pos, pos); } catch (e) {} } } }
 document.addEventListener("input", e => { const t = e.target; if (!t.dataset || !t.dataset.wrev) return; S.ui.wrev[t.dataset.wrev] = t.value.replace(/[٠-٩]/g, c => "٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/[^\d.,]/g, ""); save(); waveDraw(); });
+/* ===================== قوالب Excel: تنزيل نموذج لكل إقرار، تعبئته، ثم رفعه للمراجعة والحساب =====================
+   المكتبة: xlsx-js-style (SheetJS + تنسيق) من jsdelivr، بتتحمل وقت الحاجة بس.
+   القالب مبني من تعريف الحقول نفسه في المحاكي، فأي بند جديد بيظهر في القالب لوحده.
+   عمود «الكود» هو اللي بيتقري عند الرفع، فما تغيرهوش. */
+const XL_LIB = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
+let XL_P = null;
+function xlLib(){
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (!XL_P) XL_P = new Promise((res, rej) => { const s = document.createElement("script"); s.src = XL_LIB; s.onload = () => res(window.XLSX); s.onerror = () => { XL_P = null; rej(new Error("تعذر تحميل مكتبة Excel. اتأكد إن النت شغال.")); }; document.head.appendChild(s); });
+  return XL_P;
+}
+const XL_RET = {vat: "إقرار ضريبة القيمة المضافة", f10: "إقرار الزكاة وضريبة الدخل (نموذج 10)", wht: "نموذج استقطاع الضريبة الشهري"};
+/* تنسيق التقارير المعتمد: Arial 10، رأس أزرق فاتح بخط كحلي، حدود رمادية، خانات الإدخال أصفر هادي */
+const XS = (() => {
+  const b = {style: "thin", color: {rgb: "BFBFBF"}}, B = {top: b, bottom: b, left: b, right: b};
+  const f = (o) => Object.assign({name: "Arial", sz: 10}, o || {});
+  return {
+    title: {font: f({bold: true, sz: 14, color: {rgb: "1F3864"}}), alignment: {horizontal: "right", readingOrder: 2}},
+    sub: {font: f({italic: true, sz: 9, color: {rgb: "7F7F7F"}}), alignment: {horizontal: "right", readingOrder: 2, wrapText: false}},
+    head: {font: f({bold: true, color: {rgb: "1F3864"}}), fill: {fgColor: {rgb: "BDD7EE"}}, alignment: {horizontal: "center", vertical: "center", wrapText: true, readingOrder: 2}, border: B},
+    code: {font: f({color: {rgb: "808080"}}), alignment: {horizontal: "center"}, border: B},
+    txt: {font: f(), alignment: {horizontal: "right", vertical: "center", wrapText: true, readingOrder: 2}, border: B},
+    grp: {font: f({bold: true, color: {rgb: "1F3864"}}), fill: {fgColor: {rgb: "E2EFDA"}}, alignment: {horizontal: "right", readingOrder: 2}, border: B},
+    inp: {font: f(), fill: {fgColor: {rgb: "FFF9DB"}}, numFmt: '#,##0.00;(#,##0.00);"-"', border: B},
+    inpT: {font: f(), fill: {fgColor: {rgb: "FFF9DB"}}, alignment: {horizontal: "right", readingOrder: 2}, border: B},
+    calc: {font: f({bold: true}), fill: {fgColor: {rgb: "F2F2F2"}}, numFmt: '#,##0.00;(#,##0.00);"-"', border: B},
+    tot: {font: f({bold: true, color: {rgb: "FFFFFF"}}), fill: {fgColor: {rgb: "1F3864"}}, numFmt: '#,##0.00;(#,##0.00);"-"', alignment: {horizontal: "right", readingOrder: 2}, border: B},
+    note: {font: f({sz: 9, color: {rgb: "595959"}}), alignment: {horizontal: "right", wrapText: true, readingOrder: 2}}
+  };
+})();
+/* يبني ورقة من صفوف: كل خلية {v, s, f(معادلة), t} */
+function xlSheet(X, rows, widths){
+  const ws = {}; let maxC = 0;
+  rows.forEach((row, r) => (row || []).forEach((c, ci) => {
+    if (c == null) return; maxC = Math.max(maxC, ci);
+    const cell = typeof c === "object" ? c : {v: c};
+    const o = {v: cell.v == null ? "" : cell.v, t: cell.f ? "n" : (typeof cell.v === "number" ? "n" : "s"), s: cell.s};
+    if (cell.f) o.f = cell.f;
+    ws[X.utils.encode_cell({r, c: ci})] = o;
+  }));
+  ws["!ref"] = X.utils.encode_range({s: {r: 0, c: 0}, e: {r: rows.length - 1, c: maxC}});
+  ws["!cols"] = widths.map(w => ({wch: w}));
+  ws["!views"] = [{RTL: true}];
+  return ws;
+}
+const xlHead = (cols) => cols.map(h => ({v: h, s: XS.head}));
+const xlTop = (title, sub) => [[{v: title, s: XS.title}], [{v: sub, s: XS.sub}], []];
+const XL_DISC = "تنبيه: الأرقام اللي بيطلعها المحاكي تقريبية لأغراض التدريب والمراجعة المبدئية بس. هيئة الزكاة والضريبة والجمارك هي الجهة الوحيدة اللي من حقها تحسب المستحق وتعتمده، والمرجع هو البوابة الرسمية والأنظمة واللوائح.";
+const XL_NOTE = "عبّي الخانات الصفراء بس. ما تغيرش عمود «الكود». المبالغ بالريال وغير شاملة الضريبة. التواريخ dd/mm/yyyy. بعد ما تخلص ارفع الملف من زرار «قوالب Excel» في المحاكي.";
+const dmyOf = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ""); return m ? m[3] + "/" + m[2] + "/" + m[1] : ""; };
+
+function xlBuild(X, t, filled){
+  const wb = X.utils.book_new(), stamp = "قالب START TIME — " + XL_RET[t] + " · تدريبي، ليس نموذج الهيئة · " + fmtD(todayUTC());
+  const add = (name, rows, widths) => X.utils.book_append_sheet(wb, xlSheet(X, rows, widths), name);
+  const val = x => filled && num(x) ? r2(num(x)) : "";
+  if (t === "vat") {
+    const v = S.vat;
+    const info = [...xlTop("بيانات المكلف والفترة", stamp), xlHead(["الكود", "البيان", "القيمة", "ملاحظة"]),
+      [{v: "name", s: XS.code}, {v: "اسم المكلف", s: XS.txt}, {v: filled ? v.name : "", s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "vatNo", s: XS.code}, {v: "الرقم الضريبي (15 رقم)", s: XS.txt}, {v: filled ? String(v.vatNo || "") : "", s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "freq", s: XS.code}, {v: "نوع الفترة", s: XS.txt}, {v: filled ? (v.freq === "Q" ? "ربع سنوي" : "شهري") : "شهري", s: XS.inpT}, {v: "اكتب: شهري أو ربع سنوي", s: XS.txt}],
+      [{v: "year", s: XS.code}, {v: "السنة", s: XS.txt}, {v: filled ? +v.year : new Date().getFullYear(), s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "p", s: XS.code}, {v: "رقم الشهر أو الربع", s: XS.txt}, {v: filled ? +v.p : 1, s: XS.inpT}, {v: "الشهر 1-12 أو الربع 1-4", s: XS.txt}],
+      [{v: "annual40", s: XS.code}, {v: "التوريدات السنوية أكثر من 40 مليون؟", s: XS.txt}, {v: filled && v.annual40 === "yes" ? "نعم" : "لا", s: XS.inpT}, {v: "نعم / لا", s: XS.txt}],
+      [], [{v: XL_NOTE, s: XS.note}], [{v: XL_DISC, s: XS.note}]];
+    add("بيانات", info, [10, 38, 26, 30]);
+    const rows = [...xlTop("الإقرار — المبيعات والمشتريات", stamp), xlHead(["الكود", "البند", "البيان", "المبلغ (﷼)", "مبلغ التعديل (﷼)", "النسبة", "الضريبة (﷼)"])];
+    const body = (list, title) => {
+      rows.push([{v: "", s: XS.grp}, {v: "", s: XS.grp}, {v: title, s: XS.grp}, {v: "", s: XS.grp}, {v: "", s: XS.grp}, {v: "", s: XS.grp}, {v: "", s: XS.grp}]);
+      const first = rows.length + 1;
+      list.forEach(d => { const a = v.rows[d.k] || [0, 0], R = rows.length + 1, rate = d.vat ? (d.rate || VAT_RATE) : 0;
+        rows.push([{v: d.k, s: XS.code}, {v: String(d.n), s: XS.code}, {v: d.l, s: XS.txt}, {v: val(a[0]), s: XS.inp}, {v: val(a[1]), s: XS.inp}, {v: rate, s: Object.assign({}, XS.code, {numFmt: "0%"})}, {f: `ROUND((D${R}+E${R})*F${R},2)`, s: XS.calc}]); });
+      return [first, rows.length];
+    };
+    const [s1, s2] = body(VAT_S, "المبيعات"); const ts = rows.length + 1;
+    rows.push([{v: "t6", s: XS.tot}, {v: "6", s: XS.tot}, {v: "إجمالي المبيعات", s: XS.tot}, {f: `SUM(D${s1}:D${s2})`, s: XS.tot}, {f: `SUM(E${s1}:E${s2})`, s: XS.tot}, {v: "", s: XS.tot}, {f: `SUM(G${s1}:G${s2})`, s: XS.tot}]);
+    const [p1, p2] = body(VAT_P, "المشتريات"); const tp = rows.length + 1;
+    rows.push([{v: "t12", s: XS.tot}, {v: "12", s: XS.tot}, {v: "إجمالي المشتريات", s: XS.tot}, {f: `SUM(D${p1}:D${p2})`, s: XS.tot}, {f: `SUM(E${p1}:E${p2})`, s: XS.tot}, {v: "", s: XS.tot}, {f: `SUM(G${p1}:G${p2})`, s: XS.tot}]);
+    const r13 = rows.length + 1;
+    rows.push([{v: "b13", s: XS.code}, {v: "13", s: XS.code}, {v: "إجمالي الضريبة المستحقة عن الفترة", s: XS.txt}, null, null, null, {f: `G${ts}-G${tp}+SUMIF(A${p1}:A${p2},"p9",G${p1}:G${p2})`, s: XS.calc}]);
+    rows.push([{v: "corr", s: XS.code}, {v: "14", s: XS.code}, {v: "تصحيحات من الفترات السابقة (بين ±15,000)", s: XS.txt}, null, null, null, {v: filled ? num(v.corr) || "" : "", s: XS.inp}]);
+    rows.push([{v: "cf", s: XS.code}, {v: "15", s: XS.code}, {v: "رصيد دائن مرحل من فترات سابقة", s: XS.txt}, null, null, null, {v: filled ? num(v.cf) || "" : "", s: XS.inp}]);
+    const rn = rows.length + 1;
+    rows.push([{v: "net", s: XS.tot}, {v: "16", s: XS.tot}, {v: "صافي الضريبة المستحقة (أو المستردة)", s: XS.tot}, {v: "", s: XS.tot}, {v: "", s: XS.tot}, {v: "", s: XS.tot}, {f: `G${r13}+G${r13 + 1}-G${r13 + 2}`, s: XS.tot}]);
+    rows.push([], [{v: "ملاحظة: البند 9 (الاحتساب العكسي) بيتحسب في المخرجات والمدخلات مع بعض، فأثره الصافي صفر. عمود التعديل بيتجمع مع المبلغ زي المحاكي؛ المحاكي هيحسب كل حاجة من جديد بعد الرفع، والمعادلات هنا للمتابعة بس.", s: XS.note}]);
+    add("الإقرار", rows, [8, 6, 52, 16, 16, 8, 16]);
+  } else if (t === "wht") {
+    const w = S.wht;
+    add("بيانات", [...xlTop("بيانات المكلف والفترة", stamp), xlHead(["الكود", "البيان", "القيمة", "ملاحظة"]),
+      [{v: "name", s: XS.code}, {v: "اسم المكلف", s: XS.txt}, {v: filled ? w.name : "", s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "tin", s: XS.code}, {v: "الرقم المميز (10 أرقام)", s: XS.txt}, {v: filled ? String(w.tin || "") : "", s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "year", s: XS.code}, {v: "السنة", s: XS.txt}, {v: filled ? +w.year : new Date().getFullYear(), s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "m", s: XS.code}, {v: "الشهر (1-12)", s: XS.txt}, {v: filled ? +w.m : 1, s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "fdate", s: XS.code}, {v: "تاريخ التقديم المتوقع", s: XS.txt}, {v: filled ? dmyOf(w.fdate) : "", s: XS.inpT}, {v: "dd/mm/yyyy — لحساب غرامة التأخير. سيبه فاضي = النهارده", s: XS.txt}],
+      [], [{v: XL_NOTE, s: XS.note}], [{v: XL_DISC, s: XS.note}]], [10, 34, 26, 44]);
+    const rows = [...xlTop("النموذج الرئيسي — المبالغ المدفوعة لغير المقيمين", stamp), xlHead(["الكود", "م", "نوع الدفعة", "المبلغ المدفوع (﷼)", "النسبة", "الضريبة المستقطعة (﷼)"])];
+    const f1 = rows.length + 1;
+    WHT_ROWS.forEach(d => { const R = rows.length + 1; rows.push([{v: d.k, s: XS.code}, {v: d.n, s: XS.code}, {v: d.l, s: XS.txt}, {v: filled && w.ap[d.k] ? val(w.amt[d.k]) : "", s: XS.inp}, {v: whtRowRate(d.k), s: Object.assign({}, XS.code, {numFmt: "0%"})}, {f: `ROUND(D${R}*E${R},2)`, s: XS.calc}]); });
+    const l = rows.length;
+    rows.push([{v: "tot", s: XS.tot}, {v: 14, s: XS.tot}, {v: "إجمالي الضريبة الشهرية", s: XS.tot}, {f: `SUM(D${f1}:D${l})`, s: XS.tot}, {v: "", s: XS.tot}, {f: `SUM(F${f1}:F${l})`, s: XS.tot}]);
+    rows.push([], [{v: "النسب هي نسب المحاكي المرجعية (المادة 68 من النظام والمادة 63 من اللائحة). لو المستفيد مقيم في دولة ليها اتفاقية منع ازدواج، النسبة ممكن تقل — عدّلها من المحاكي بعد الرفع.", s: XS.note}]);
+    add("النموذج الرئيسي", rows, [8, 5, 40, 18, 8, 20]);
+  } else {
+    const i = S.info, C = ctx();
+    add("معلومات أساسية", [...xlTop("معلومات أساسية", stamp), xlHead(["الكود", "البيان", "القيمة", "ملاحظة"]),
+      [{v: "name", s: XS.code}, {v: "اسم المكلف", s: XS.txt}, {v: filled ? i.name : "", s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "tin", s: XS.code}, {v: "الرقم المميز (10 أرقام)", s: XS.txt}, {v: filled ? String(i.tin || "") : "", s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "legal", s: XS.code}, {v: "الشكل القانوني", s: XS.txt}, {v: filled ? LEGAL[i.legal] : LEGAL.llc, s: XS.inpT}, {v: Object.values(LEGAL).join(" / "), s: XS.txt}],
+      [{v: "start", s: XS.code}, {v: "بداية السنة المالية", s: XS.txt}, {v: filled ? dmyOf(i.start) : "01/01/2025", s: XS.inpT}, {v: "dd/mm/yyyy", s: XS.txt}],
+      [{v: "end", s: XS.code}, {v: "نهاية السنة المالية", s: XS.txt}, {v: filled ? dmyOf(i.end) : "31/12/2025", s: XS.inpT}, {v: "dd/mm/yyyy — بتحدد اللائحة (من 2024 الجديدة)", s: XS.txt}],
+      [{v: "capSa", s: XS.code}, {v: "نسبة رأس المال السعودي/الخليجي %", s: XS.txt}, {v: filled ? num(i.capSa) : 100, s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "prfSa", s: XS.code}, {v: "نسبة الأرباح السعودية/الخليجية %", s: XS.txt}, {v: filled ? num(i.prfSa) : 100, s: XS.inpT}, {v: "", s: XS.txt}],
+      [{v: "fsNP", s: XS.code}, {v: "صافي الربح حسب القوائم المعتمدة (للمطابقة)", s: XS.txt}, {v: filled && S.fsNP != null ? S.fsNP : "", s: XS.inp}, {v: "اختياري", s: XS.txt}],
+      [{v: "tprpt", s: XS.code}, {v: "عمليات مع أطراف ذوي علاقة؟", s: XS.txt}, {v: filled && S.tp.rpt === "yes" ? "نعم" : "لا", s: XS.inpT}, {v: "نعم / لا", s: XS.txt}],
+      [{v: "tpmnc", s: XS.code}, {v: "جزء من مجموعة متعددة الجنسيات (> 3.2 مليار)؟", s: XS.txt}, {v: filled && S.tp.mnc === "yes" ? "نعم" : "لا", s: XS.inpT}, {v: "نعم / لا", s: XS.txt}],
+      [], [{v: XL_NOTE, s: XS.note}], [{v: XL_DISC, s: XS.note}]], [10, 44, 28, 46]);
+    const STEP_T = {inc: "قائمة الدخل", adj: "التعديلات", zakN: "الوعاء الزكوي — اللائحة الجديدة (من 2024)", zakO: "الوعاء الزكوي — اللائحة السابقة", tax: "الوعاء الضريبي"};
+    const rows = [...xlTop("بنود الإقرار", stamp), xlHead(["الكود", "رقم البند", "البند", "وصف السطر (للجداول)", "المبلغ (﷼)", "نوع الخانة"])];
+    const TYP = {in: "مبلغ", radioin: "مبلغ (ينطبق لو فيه قيمة)", list: "جدول — كرر السطر بنفس الكود لكل بند", fixed: "جدول ثابت", adj: "جدول التعديلات"};
+    Object.keys(STEP_T).forEach(st => {
+      rows.push([{v: "", s: XS.grp}, {v: "", s: XS.grp}, {v: STEP_T[st], s: XS.grp}, {v: "", s: XS.grp}, {v: "", s: XS.grp}, {v: "", s: XS.grp}]);
+      STEPS_DEF[st].forEach(d => {
+        if (!TYP[d.t]) return;
+        const code = d.code || d.c, typ = TYP[d.t] + (d.only === "old" ? " · اللائحة السابقة" : d.only === "new" ? " · اللائحة الجديدة" : "") + (d.tax ? " · ضريبي" : "");
+        if (d.t === "list") {
+          const L = filled && S.app[d.k] ? (S.sch[d.k] || []).filter(r => num(r.a)) : [];
+          (L.length ? L : [{s: "", a: ""}]).forEach(r => rows.push([{v: d.k, s: XS.code}, {v: code, s: XS.code}, {v: d.l, s: XS.txt}, {v: r.s || "", s: XS.inpT}, {v: val(r.a), s: XS.inp}, {v: typ, s: XS.note}]));
+        } else if (d.t === "fixed" || d.t === "adj") {
+          const labs = d.t === "adj" ? ADJ_ROWS : d.rows, arr = filled ? (S.sch[d.k] || []) : [];
+          labs.forEach((lab, j) => rows.push([{v: d.k + "#" + (j + 1), s: XS.code}, {v: code, s: XS.code}, {v: d.l, s: XS.txt}, {v: lab, s: XS.txt}, {v: val(arr[j]), s: XS.inp}, {v: typ, s: XS.note}]));
+        } else rows.push([{v: d.k, s: XS.code}, {v: code, s: XS.code}, {v: d.l, s: XS.txt}, {v: "", s: XS.txt}, {v: val(d.t === "radioin" && !S.app[d.k] ? 0 : S.v[d.k]), s: XS.inp}, {v: typ, s: XS.note}]);
+      });
+    });
+    rows.push([], [{v: "المحاكي بيطبق اللائحة حسب تاريخ نهاية السنة: البنود المكتوب جنبها «اللائحة السابقة» بتتجاهل في السنين الجديدة والعكس. جدول الديون (4007 — اللائحة السابقة) مش في القالب؛ عبّيه من المحاكي بعد الرفع.", s: XS.note}]);
+    add("بنود الإقرار", rows, [9, 8, 46, 40, 18, 34]);
+    const bs = [...xlTop("المركز المالي", stamp), xlHead(["الكود", "البند", "أول المدة (﷼)", "آخر المدة (﷼)"])];
+    BS_LINES.forEach(L => {
+      if (L[0] === "H") { bs.push([{v: "", s: XS.grp}, {v: L[1], s: XS.grp}, {v: "", s: XS.grp}, {v: "", s: XS.grp}]); return; }
+      if (!L[2]) { bs.push([{v: L[0], s: XS.code}, {v: L[1], s: XS.calc}, {v: "يحسبها المحاكي", s: XS.note}, {v: "", s: XS.note}]); return; }
+      const a = filled ? (S.bs[L[0]] || []) : [];
+      bs.push([{v: L[0], s: XS.code}, {v: L[1], s: XS.txt}, {v: val(a[0]), s: XS.inp}, {v: val(a[1]), s: XS.inp}]);
+    });
+    add("المركز المالي", bs, [8, 46, 18, 18]);
+  }
+  return wb;
+}
+async function xlDownload(t, filled){
+  try {
+    const X = await xlLib(), wb = xlBuild(X, t, filled);
+    const nm = {vat: "قالب_إقرار_القيمة_المضافة", f10: "قالب_إقرار_الزكاة_نموذج10", wht: "قالب_الاستقطاع_الشهري"}[t];
+    X.writeFile(wb, nm + (filled ? "_بأرقام_الحالة" : "") + ".xlsx");
+  } catch (e) { toast(e.message || "حصل خطأ في إنشاء الملف"); }
+}
+/* ---------- القراءة ---------- */
+const xlNum = v => { if (v == null || v === "") return 0; if (typeof v === "number") return v; let s = String(v).trim().replace(/[٠-٩]/g, c => "٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/[٫]/g, ".").replace(/,/g, ""); const neg = /^\(.*\)$/.test(s); s = s.replace(/[()\s﷼ريال]/g, ""); const n = parseFloat(s); return isNaN(n) ? 0 : (neg ? -n : n); };
+const xlDate = v => {
+  if (v == null || v === "") return "";
+  if (typeof v === "number") { const d = new Date(Math.round((v - 25569) * 864e5)); return d.toISOString().slice(0, 10); }
+  if (v instanceof Date) return new Date(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate())).toISOString().slice(0, 10);
+  const m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec(String(v).trim()); return m ? m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0") : "";
+};
+const xlYes = v => /^(نعم|yes|y|1|true)$/i.test(String(v || "").trim());
+function xlRows(X, wb, nameLike){
+  const n = wb.SheetNames.find(s => s.indexOf(nameLike) >= 0); if (!n) return [];
+  return X.utils.sheet_to_json(wb.Sheets[n], {header: 1, raw: true, defval: ""}).filter(r => r && String(r[0]).trim());
+}
+function xlDetect(wb){
+  const ns = wb.SheetNames.join("|");
+  if (/بنود الإقرار/.test(ns)) return "f10";
+  if (/النموذج الرئيسي/.test(ns)) return "wht";
+  if (/الإقرار/.test(ns)) return "vat";
+  return null;
+}
+function xlApply(X, wb){
+  const t = xlDetect(wb); if (!t) throw new Error("الملف ده مش قالب من قوالب المحاكي. نزّل القالب من نفس الزرار وعبّيه.");
+  const warn = [];
+  ensureInit(t);
+  if (t === "vat") {
+    const v = blankVat(), info = {}; xlRows(X, wb, "بيانات").forEach(r => { info[String(r[0]).trim()] = r[2]; });
+    v.name = String(info.name || ""); v.vatNo = String(info.vatNo || "").replace(/\D/g, ""); v.freq = /ربع/.test(String(info.freq)) ? "Q" : "M";
+    v.year = +info.year || new Date().getFullYear(); v.p = Math.max(1, Math.min(v.freq === "Q" ? 4 : 12, +info.p || 1)); v.annual40 = xlYes(info.annual40) ? "yes" : "no";
+    const keys = new Set(VAT_S.concat(VAT_P).map(d => d.k));
+    xlRows(X, wb, "الإقرار").forEach(r => { const k = String(r[0]).trim();
+      if (keys.has(k)) { const a = xlNum(r[3]), j = xlNum(r[4]); if (a < 0) warn.push("البند " + k + ": المبلغ بالسالب — اتسجل زي ما هو، راجعه."); v.rows[k] = [a, j]; }
+      else if (k === "corr") v.corr = xlNum(r[6]); else if (k === "cf") v.cf = xlNum(r[6]); });
+    if (Math.abs(v.corr) > 15000) warn.push("التصحيحات (البند 14) أكبر من ±15,000 — في البوابة لازم تعديل ذاتي بدل كده.");
+    if (v.vatNo && v.vatNo.length !== 15) warn.push("الرقم الضريبي لازم يكون 15 رقم.");
+    if (v.rows.s1a || v.rows.s1g) { S.ui.vq = S.ui.vq || {}; if (v.rows.s1a) S.ui.vq.q1 = 1; if (v.rows.s1g) S.ui.vq.q2 = 1; }
+    S.vat = v;
+  } else if (t === "wht") {
+    const w = blankWht(), info = {}; xlRows(X, wb, "بيانات").forEach(r => { info[String(r[0]).trim()] = r[2]; });
+    w.name = String(info.name || ""); w.tin = String(info.tin || "").replace(/\D/g, ""); w.year = +info.year || new Date().getFullYear(); w.m = Math.max(1, Math.min(12, +info.m || 1)); w.fdate = xlDate(info.fdate);
+    const keys = new Set(WHT_ROWS.map(d => d.k));
+    xlRows(X, wb, "النموذج الرئيسي").forEach(r => { const k = String(r[0]).trim(); if (!keys.has(k)) return; const a = xlNum(r[3]); if (a) { w.ap[k] = 1; w.amt[k] = a; } });
+    S.wht = normWht(w);
+  } else {
+    const info = {}; xlRows(X, wb, "معلومات").forEach(r => { info[String(r[0]).trim()] = r[2]; });
+    const legal = Object.keys(LEGAL).find(k => LEGAL[k] === String(info.legal || "").trim()) || "llc";
+    S.info = {name: String(info.name || ""), tin: String(info.tin || "").replace(/\D/g, ""), legal, start: xlDate(info.start), end: xlDate(info.end), capSa: info.capSa === "" ? 100 : xlNum(info.capSa), prfSa: info.prfSa === "" ? 100 : xlNum(info.prfSa)};
+    S.fsNP = info.fsNP === "" || info.fsNP == null ? null : xlNum(info.fsNP);
+    S.tp = Object.assign({}, S.tp, {rpt: xlYes(info.tprpt) ? "yes" : "no", mnc: xlYes(info.tpmnc) ? "yes" : "no"});
+    if (!S.info.start || !S.info.end) warn.push("تاريخ بداية أو نهاية السنة المالية مش مقروء — اكتبه dd/mm/yyyy.");
+    S.v = {}; S.app = {}; S.sch = {}; S.bs = {};
+    const byK = {}; Object.keys(STEPS_DEF).forEach(st => STEPS_DEF[st].forEach(d => { byK[d.k] = d; }));
+    xlRows(X, wb, "بنود").forEach(r => {
+      const raw = String(r[0]).trim(), [k, idx] = raw.split("#"), d = byK[k]; if (!d) return;
+      const a = xlNum(r[4]);
+      if (d.t === "in") { if (a) S.v[k] = a; }
+      else if (d.t === "radioin") { if (a) { S.v[k] = a; S.app[k] = true; } }
+      else if (d.t === "list") { if (a) { (S.sch[k] = S.sch[k] || []).push({s: String(r[3] || "").trim() || "من القالب", a}); S.app[k] = true; } }
+      else if (d.t === "fixed" || d.t === "adj") { const n = (d.t === "adj" ? ADJ_ROWS : d.rows).length; const arr = S.sch[k] = S.sch[k] || new Array(n).fill(0); arr[(+idx || 1) - 1] = a; if (a) S.app[k] = true; }
+    });
+    xlRows(X, wb, "المركز").forEach(r => { const ln = +r[0]; const L = BS_LINES.find(x => x[0] === ln); if (!L || !L[2]) return; const o = xlNum(r[2]), c = xlNum(r[3]); if (o || c) S.bs[ln] = [o, c]; });
+  }
+  S.caseId = "excel"; S.decl = false; S.ui.amendOf = null; S.ui.inited = Object.assign(S.ui.inited || {}, {[t]: true}); S.ret = t; S.ui.tab = t;
+  S.flow.logged = true;
+  return {t, warn};
+}
+function xlResultHtml(t, warn){
+  const R = recalc(), row = (l, v, b) => `<tr><td>${b ? `<b>${l}</b>` : l}</td><td class="n">${b ? `<b>${fmt(v)}</b>` : fmt(v)}</td></tr>`;
+  let tb = "";
+  if (t === "vat") tb = row("إجمالي ضريبة المبيعات (6)", R.t6.vat) + row("إجمالي ضريبة المشتريات (12)", R.t12.vat) + row("الضريبة المستحقة عن الفترة (13)", R.b13) + row("صافي الضريبة المستحقة (16)", R.net, 1);
+  else if (t === "wht") tb = row("إجمالي المبالغ المدفوعة", R.base) + row("الضريبة المستقطعة (14)", R.tax) + row("غرامة التأخير (15)", R.pen) + row("الإجمالي (16)", R.total, 1);
+  else { const C = R.$C; tb = row("صافي الربح الدفتري (2033)", R["2033"]) + (C.tpt !== "F" ? row("الوعاء الزكوي", R.base || 0) + row("الزكاة المستحقة", R.zakat, 1) : "") + (C.tpt !== "S" ? row("الوعاء الضريبي", R["5012"] || 0) + row("ضريبة الدخل المستحقة", R.tax, 1) : "") + row("الإجمالي المستحق", R.total, 1); }
+  const v = (typeof validationFor === "function" && t === "f10") ? validationFor(R).filter(x => x.lvl === "bad" || x.lvl === "warn") : [];
+  const msgs = warn.map(m => ({lvl: "warn", msg: m})).concat(v);
+  return `<div class="ded-res ok" style="margin-top:10px"><h4>اتقرا الملف واتحسب ${XL_RET[t]} (أرقام تقريبية)</h4><div class="note warn small" style="margin-bottom:8px">${XL_DISC}</div>
+    <div class="tbl-wrap"><table class="tbl">${tb}</table></div>
+    ${msgs.length ? `<div style="margin-top:8px"><b class="small">نقاط محتاجة مراجعة (${msgs.length}):</b><ul class="vlist" style="margin-top:6px">${msgs.slice(0, 12).map(x => `<li><span class="pill ${x.lvl}">${x.lvl === "bad" ? "خطأ" : "تنبيه"}</span><span style="flex:1">${esc(x.msg)}</span></li>`).join("")}</ul></div>` : `<div class="note small" style="margin-top:8px">ما فيش أخطاء ظاهرة في الفحص الآلي.</div>`}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn primary" data-act="xlOpen" data-t="${t}">افتح الإقرار في المحاكي</button><button type="button" class="btn" data-act="xlReview" data-t="${t}">روح لشاشة المراجعة</button></div></div>`;
+}
+function xlHtml(res){
+  const t = S.ui.xlT || "vat";
+  const tab = (k, l) => `<button type="button" class="${t === k ? "on" : ""}" data-act="xlT" data-v="${k}">${l}</button>`;
+  return dlgHtml("قوالب Excel — عبّي الإقرار في Excel وراجعه هنا", `
+   <div class="note" style="margin-bottom:10px">نزّل قالب الإقرار، عبّي الخانات الصفراء من دفاترك، وارفعه هنا. المحاكي هيقرا الأرقام ويحسب الإقرار كله ويوريك الأخطاء قبل ما تدخل البوابة الحقيقية. <b>الملف بيتقري على جهازك بس، وما بيترفعش لأي مكان.</b></div><div class="note warn small" style="margin-bottom:10px">${XL_DISC}</div>
+   <div class="seg" style="margin-bottom:12px">${tab("vat", "القيمة المضافة")}${tab("f10", "الزكاة والدخل (نموذج 10)")}${tab("wht", "الاستقطاع الشهري")}</div>
+   <div class="ded-g"><h4>١. نزّل القالب</h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-act="xlDl" data-f="0">قالب فاضي</button><button type="button" class="btn" data-act="xlDl" data-f="1">قالب بأرقام الحالة الحالية (مثال)</button></div></div>
+   <div class="ded-g"><h4>٢. ارفع القالب بعد ما تعبيه</h4><label class="btn line" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="file" accept=".xlsx,.xls" data-xlup="1" style="display:none">اختار ملف Excel…</label>
+    <div class="small muted" style="margin-top:6px">نوع الإقرار بيتعرف من الملف نفسه. رفع الملف بيستبدل أرقام الإقرار اللي مفتوح دلوقتي بنفس النوع.</div>${res || ""}</div>`,
+   `<button type="button" class="btn" data-act="closeModal">إغلاق</button>`);
+}
+document.addEventListener("change", async e => {
+  const t = e.target; if (!t.dataset || !t.dataset.xlup || !t.files || !t.files[0]) return;
+  const file = t.files[0];
+  try {
+    const X = await xlLib(), buf = await file.arrayBuffer(), wb = X.read(buf, {type: "array", cellDates: false});
+    const r = xlApply(X, wb); S.ui.xlT = r.t; save();
+    const m = $("#modal"); if (!m.hidden) m.querySelector(".dlg").innerHTML = xlHtml(xlResultHtml(r.t, r.warn));
+    render();
+  } catch (err) { toast(err.message || "تعذرت قراءة الملف"); }
+});
+
 const ACT = {
+  xlDlg(){ DLG = {t: "xl"}; S.ui.xlT = S.ui.xlT || (S.ret || "vat"); openModal(xlHtml()); },
+  xlT(el){ S.ui.xlT = el.dataset.v; save(); const m = $("#modal"); m.querySelector(".dlg").innerHTML = xlHtml(); },
+  xlDl(el){ xlDownload(S.ui.xlT || "vat", el.dataset.f === "1"); },
+  xlOpen(el){ closeModal(); S.ret = el.dataset.t; S.ui.tab = S.ret; go("form", 0); },
+  xlReview(el){ closeModal(); const t = el.dataset.t; S.ret = t; S.ui.tab = t; if (t === "f10") go("review"); else go("form", t === "vat" ? 6 : 5); },
   waveOpen(){ DLG = {t: "wave"}; openModal(waveHtml()); },
   waveReset(){ S.ui.wrev = {}; save(); waveDraw(); },
   dedOpen(){ DLG = {t: "ded"}; openModal(dedHtml(), "ded"); },
