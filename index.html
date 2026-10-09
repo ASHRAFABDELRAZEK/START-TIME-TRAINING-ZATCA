@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14573A">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta name="description" content="محاكي تدريبي مستقل من START TIME ACADEMY — ليس موقع هيئة الزكاة والضريبة والجمارك">
 <title>محاكي الإقرارات الضريبية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -681,6 +684,8 @@ details[open]>summary .chev{transform:rotate(225deg)}
 .trn{margin-top:26px;border:1px dashed var(--line);border-radius:8px}
 .trn>summary{cursor:pointer;padding:12px 14px;font-size:14px;color:var(--muted)}
 .trn-b{padding:6px 14px 16px}
+.glinks{margin:6px 0;padding-inline-start:18px;display:grid;gap:6px;font-size:13px}
+.glinks a{color:var(--accent);font-weight:600}
 .rvlist .dsec summary{display:flex;align-items:center;gap:10px}
 .rvlist .dsec summary .sp{flex:1}
 .rv-btns{display:flex;flex-wrap:wrap;gap:8px}
@@ -2110,7 +2115,7 @@ function helpHtml(k){
 function renderPanel(){
   const h = S.ui.help;
   if (h) { $("#panelTitle").textContent = "شرح البند"; $("#panelBody").innerHTML = helpHtml(h) + `<div class="hp-sec"><button type="button" class="linkbtn" data-act="helpClose">رجوع لدليل المرحلة</button></div>`; }
-  else { const g = guideObj(); $("#panelTitle").textContent = g ? g.t : "لوحة الشرح"; $("#panelBody").innerHTML = guideHtml(g) + (S.screen === "form" && S.ret === "vat" ? vatPanelExtra() : "") + (S.screen === "form" && S.ret === "wht" ? whtPanelExtra() : "") + (((S.screen === "form" && S.ret === "f10" && FORM_STEPS[S.step] && FORM_STEPS[S.step].id === "tp") || (S.screen === "review" && S.ret === "f10")) ? f10Extra() : "") + (S.screen === "form" && S.ret !== "vat" && !(S.ret === "wht" && (S.ui.whtAnnual || S.step !== 2)) && !(S.ret === "f10" && FORM_STEPS[S.step] && FORM_STEPS[S.step].id === "tp") ? `<div class="hp-sec note small">اضغط على ⓘ جنب أي بند عشان يظهر شرحه ومعادلته وحسابه بالأرقام.</div>` : ""); }
+  else { const g = guideObj(); $("#panelTitle").textContent = g ? g.t : "لوحة الشرح"; $("#panelBody").innerHTML = guideHtml(g) + guideLinksHtml() + (S.screen === "form" && S.ret === "vat" ? vatPanelExtra() : "") + (S.screen === "form" && S.ret === "wht" ? whtPanelExtra() : "") + (((S.screen === "form" && S.ret === "f10" && FORM_STEPS[S.step] && FORM_STEPS[S.step].id === "tp") || (S.screen === "review" && S.ret === "f10")) ? f10Extra() : "") + (S.screen === "form" && S.ret !== "vat" && !(S.ret === "wht" && (S.ui.whtAnnual || S.step !== 2)) && !(S.ret === "f10" && FORM_STEPS[S.step] && FORM_STEPS[S.step].id === "tp") ? `<div class="hp-sec note small">اضغط على ⓘ جنب أي بند عشان يظهر شرحه ومعادلته وحسابه بالأرقام.</div>` : ""); }
 }
 
 const SVG = (d) => `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -3563,6 +3568,35 @@ document.addEventListener("change", async e => {
   } catch (err) { toast(err.message || "تعذرت قراءة الملف"); }
 });
 
+/* ===================== أدلة الهيئة الرسمية لكل خطوة (روابط على zatca.gov.sa — التاريخ = آخر تحديث للملف على الموقع) ===================== */
+const ZG = {
+  zakUM: ["دليل المستخدم: تقديم إقرار الزكاة للمنشآت", "https://zatca.gov.sa/ar/eServices/Documents/eServices_Manual_051.pdf", "25/08/2026"],
+  zakItems: ["الدليل الإرشادي لبنود الإقرار الزكوي (لائحة 1445هـ)", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Zakat%20Return%20Items%20Guideline.pdf", "30/03/2026"],
+  zakConcepts: ["دليل مفاهيم الوعاء الزكوي", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Zakat%20Base%20Concepts%20Guideline.pdf", "30/03/2026"],
+  zakAdd: ["دليل إضافات الوعاء الزكوي (1445هـ)", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-For-Zakat-Base-Additions-Zakat-Collection-1445AH.pdf", "01/06/2026"],
+  zakDed: ["دليل حسميات الوعاء الزكوي (1445هـ)", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Deduction-Items-from-Zakat-Base-Zakat-Collection-1445AH.pdf", "01/06/2026"],
+  cal: ["تقويم الإقرارات الزكوية والضريبية", "https://zatca.gov.sa/ar/MediaCenter/Publications/Documents/Zakat%20Declaration%20and%20Tax%20Returns%20Calendar.pdf", "13/05/2026"],
+  vatUM: ["دليل المستخدم: تقديم إقرار ضريبة القيمة المضافة", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/%D8%AA%D9%82%D8%AF%D9%8A%D9%85%20%D8%A5%D9%82%D8%B1%D8%A7%D8%B1%20%D8%B6%D8%B1%D9%8A%D8%A8%D8%A9%20%D8%A7%D9%84%D9%82%D9%8A%D9%85%D8%A9%20%D8%A7%D9%84%D9%85%D8%B6%D8%A7%D9%81%D8%A9.pdf", "16/07/2023"],
+  vatSimple: ["الدليل المبسط لرفع إقرار القيمة المضافة (فيه الأخطاء الشائعة ومثال الخصم النسبي ص 13)", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Simplified_VAT_Filing_Guidelines.pdf", "16/01/2025"],
+  vatInput: ["دليل خصم ضريبة المدخلات", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-on-Input-Tax-Deduction-under-VAT-Provisions.pdf", "19/05/2026"],
+  vatInv: ["دليل الفوترة الضريبية والسجلات", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf", "02/06/2026"],
+  vatGov: ["دليل تاريخ استحقاق الضريبة في المعاملات مع الجهات الحكومية", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-on-the-Tax-Due-Date-for-Transactions-with-Government-Entities.pdf", "21/02/2023"],
+  vatAmend: ["دليل المستخدم: تعديل إقرار ضريبة القيمة المضافة", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/%D8%AA%D8%B9%D8%AF%D9%8A%D9%84%20%D8%A5%D9%82%D8%B1%D8%A7%D8%B1%20VAT.pdf", "29/08/2023"],
+  whtUM: ["دليل المستخدم: تقديم نماذج ضريبة الاستقطاع", "https://zatca.gov.sa/ar/eServices/Documents/%D8%AA%D9%82%D8%AF%D9%8A%D9%85%20%D8%A5%D9%82%D8%B1%D8%A7%D8%B1%20%D8%B6%D8%B1%D9%8A%D8%A8%D8%A9%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%82%D8%B7%D8%A7%D8%B9.pdf", "02/09/2026"],
+  whtGen: ["الدليل العام لضريبة الاستقطاع", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/General-Guideline-for-Withholding-Tax-In-accordance-with-the-provisions-of-the-Income-Tax-Law-and-its-Implementing-Regulations.pdf", "30/09/2026"],
+  whtSimple: ["الدليل المبسط لضريبة الاستقطاع", "https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Simplified-Guideline-for-Tax-Withholding.pdf", "16/02/2023"]
+};
+function guideKeys(){
+  if (!/^(form|review)$/.test(S.screen)) return [];
+  if (S.ret === "vat") return S.step === 1 ? ["vatUM", "vatSimple", "vatGov"] : S.step === 2 ? ["vatInput", "vatSimple", "vatInv"] : ["vatUM", "vatSimple", "vatAmend"];
+  if (S.ret === "wht") return ["whtUM", "whtGen", "whtSimple"];
+  const id = S.screen === "review" ? "rev" : (FORM_STEPS[S.step] || {}).id;
+  return id === "zak" ? ["zakItems", "zakAdd", "zakDed", "zakConcepts"] : id === "inc" || id === "adj" ? ["zakItems", "zakUM"] : ["zakUM", "zakItems", "cal"];
+}
+function guideLinksHtml(){
+  const ks = guideKeys(); if (!ks.length) return "";
+  return `<div class="hp-sec"><b class="small">أدلة الهيئة الرسمية لهذه الخطوة</b><ul class="glinks">${ks.map(k => { const g = ZG[k]; return `<li><a href="${g[1]}" target="_blank" rel="noopener">${g[0]}</a><span class="muted small"> · آخر تحديث ${g[2]}</span></li>`; }).join("")}</ul><div class="small muted">الروابط بتفتح موقع الهيئة الرسمي. لو الدليل اتحدث، المرجع هو النسخة اللي على الموقع.</div></div>`;
+}
 const ACT = {
   xlDlg(){ DLG = {t: "xl"}; S.ui.xlT = S.ui.xlT || (S.ret || "vat"); openModal(xlHtml()); },
   xlT(el){ S.ui.xlT = el.dataset.v; save(); const m = $("#modal"); m.querySelector(".dlg").innerHTML = xlHtml(); },
@@ -3815,5 +3849,6 @@ render(); armIdle();
 
 </script>
 
+<script>if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});</script>
 </body>
 </html>
