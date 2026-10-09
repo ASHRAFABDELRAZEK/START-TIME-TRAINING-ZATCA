@@ -943,9 +943,9 @@ details[open]>summary .chev{transform:rotate(225deg)}
       <select id="caseSel" aria-label="الحالة التدريبية"></select>
       <button class="tbtn" id="explainBtn" aria-pressed="false" type="button">وضع الشرح</button>
       <button class="tbtn" data-act="quiz" type="button">اختبر نفسك</button>
-      <button class="tbtn" data-act="waveOpen" type="button">موجات الربط</button>
+      <button class="tbtn" data-act="waveOpen" type="button">الموجات</button>
       <button class="tbtn" data-act="xlDlg" type="button">قوالب Excel</button>
-      <button class="tbtn" data-act="json" type="button">نسخ JSON</button>
+      <button class="tbtn" data-act="json" type="button" id="jsonBtn" hidden>نسخ JSON</button>
       <button class="tbtn" data-act="reset" type="button">إعادة البدء</button>
     </div>
   </div>
@@ -3285,47 +3285,64 @@ function dedHtml(){
 function dedDraw(){ const m = $("#modal"); if (m.hidden || !DLG || DLG.t !== "ded") return; const a = document.activeElement, id = a && a.dataset ? (a.dataset.ded || a.dataset.dedf) : null, pos = a && a.selectionStart; m.querySelector(".dlg").innerHTML = dedHtml(); if (id) { const n = m.querySelector(`[data-ded="${id}"],[data-dedf="${id}"]`); if (n) { n.focus({preventScroll: true}); try { if (pos != null) n.setSelectionRange(pos, pos); } catch (e) {} } } }
 document.addEventListener("input", e => { const t = e.target; if (!t.dataset || !(t.dataset.ded === "vat" || t.dataset.ded === "pct")) return; S.ui.ded[t.dataset.ded] = t.value; save(); dedDraw(); });
 document.addEventListener("change", e => { const t = e.target, d = t.dataset || {}; if (d.ded && d.ded !== "vat" && d.ded !== "pct") { S.ui.ded[d.ded] = t.value; save(); dedDraw(); } else if (d.dedf) { S.ui.ded.f[d.dedf] = t.checked ? 1 : 0; save(); dedDraw(); } });
-/* ===================== أداة «هل منشأتي داخلة في الربط؟» (المرحلة الثانية من الفوترة الإلكترونية) =====================
-   الحدود والمواعيد من مصادر ثانوية (شركات أنظمة محاسبة) لحد 09/10/2026 — للتدريب فقط، وتتراجع على بوابة فاتورة.
-   الموجات 1–16: التاريخ هو بداية فترة الربط. من الموجة 17: آخر موعد لإتمام الربط. */
-const WAVES = [
- [1,3e9,[2021],"01/01/2023"],[2,5e8,[2021],"01/07/2023"],[3,2.5e8,[2021,2022],"01/10/2023"],[4,1.5e8,[2021,2022],"01/11/2023"],
- [5,1e8,[2021,2022],"01/12/2023"],[6,7e7,[2021,2022],"01/01/2024"],[7,5e7,[2021,2022],"01/02/2024"],[8,4e7,[2021,2022],"01/03/2024"],
- [9,3e7,[2021,2022],"01/06/2024"],[10,2.5e7,[2022,2023],"01/10/2024"],[11,1.5e7,[2022,2023],"01/11/2024"],[12,1e7,[2022,2023],"01/12/2024"],
- [13,7e6,[2022,2023],"01/01/2025"],[14,5e6,[2022,2023],"01/02/2025"],[15,4e6,[2022,2023],"01/03/2025"],[16,3e6,[2022,2023],"01/04/2025"],
- [17,2.5e6,[2022,2023],"31/07/2025"],[18,2e6,[2022,2023],"31/08/2025"],[19,1.75e6,[2022,2023],"30/09/2025"],[20,1.5e6,[2022,2023],"31/10/2025"],
- [21,1.25e6,[2022,2023,2024],"30/11/2025"],[22,1e6,[2022,2023,2024],"31/12/2025"],[23,7.5e5,[2022,2023,2024],"31/03/2026"],
- [24,3.75e5,[2022,2023,2024],"30/06/2026"],[25,1.875e5,[2022,2023,2024,2025],"01/02/2027"]];
-const WV_YEARS = [2021, 2022, 2023, 2024, 2025];
+/* ===================== أداة «هل منشأتي داخلة في الموجة؟» — عامة لأي برنامج تطبيق على موجات =====================
+   كل برنامج = سجل في WAVE_PROGRAMS. لإضافة برنامج جديد (أو موجة جديدة) ضيف سجل/سطر هنا بس، والأداة والتنبيهات بتشتغل لوحدها.
+   waves: [رقم الموجة، الحد (أكبر من)، سنين المرجع، التاريخ dd/mm/yyyy، (اختياري) نوع التاريخ "start" = بداية الفترة / "end" = آخر موعد].
+   الفوترة الإلكترونية: الحدود والمواعيد من مصادر ثانوية لحد 09/10/2026 — للتدريب فقط، وتتراجع على بوابة فاتورة. */
+const WAVE_PROGRAMS = [
+  {id: "einv", name: "الفوترة الإلكترونية — المرحلة الثانية (الربط والتكامل)", short: "الفوترة الإلكترونية",
+   metric: "الإيرادات الخاضعة لضريبة القيمة المضافة", unit: "﷼", years: [2021, 2022, 2023, 2024, 2025],
+   platform: "منصة «فاتورة»", source: "مصادر ثانوية لحد 09/10/2026 — تتراجع على بوابة فاتورة",
+   none: ["المرحلة الأولى (الإصدار) مطبقة على كل المكلفين من 04/12/2021: فواتير من نظام إلكتروني متوافق وفيها QR."],
+   note: "الموجات 1–16: التاريخ هو بداية فترة الربط (حوالي 6 شهور). من الموجة 17: آخر موعد لإتمام الربط. الموجة 25 اتعلنت يوم 24/07/2026.",
+   waves: [
+    [1,3e9,[2021],"01/01/2023","start"],[2,5e8,[2021],"01/07/2023","start"],[3,2.5e8,[2021,2022],"01/10/2023","start"],[4,1.5e8,[2021,2022],"01/11/2023","start"],
+    [5,1e8,[2021,2022],"01/12/2023","start"],[6,7e7,[2021,2022],"01/01/2024","start"],[7,5e7,[2021,2022],"01/02/2024","start"],[8,4e7,[2021,2022],"01/03/2024","start"],
+    [9,3e7,[2021,2022],"01/06/2024","start"],[10,2.5e7,[2022,2023],"01/10/2024","start"],[11,1.5e7,[2022,2023],"01/11/2024","start"],[12,1e7,[2022,2023],"01/12/2024","start"],
+    [13,7e6,[2022,2023],"01/01/2025","start"],[14,5e6,[2022,2023],"01/02/2025","start"],[15,4e6,[2022,2023],"01/03/2025","start"],[16,3e6,[2022,2023],"01/04/2025","start"],
+    [17,2.5e6,[2022,2023],"31/07/2025"],[18,2e6,[2022,2023],"31/08/2025"],[19,1.75e6,[2022,2023],"30/09/2025"],[20,1.5e6,[2022,2023],"31/10/2025"],
+    [21,1.25e6,[2022,2023,2024],"30/11/2025"],[22,1e6,[2022,2023,2024],"31/12/2025"],[23,7.5e5,[2022,2023,2024],"31/03/2026"],
+    [24,3.75e5,[2022,2023,2024],"30/06/2026"],[25,1.875e5,[2022,2023,2024,2025],"01/02/2027"]]}
+  /* مثال لبرنامج مستقبلي (انسخه وعدّل):
+  ,{id: "xxx", name: "اسم البرنامج", short: "اسم مختصر", metric: "المعيار (مثلاً الإيرادات)", unit: "﷼", years: [2024, 2025],
+    platform: "المنصة/الجهة", source: "رابط أو اسم الإعلان الرسمي", none: [], note: "",
+    waves: [[1, 1e8, [2024], "01/06/2027"], [2, 5e7, [2024, 2025], "01/12/2027"]]} */
+];
 const dmyToDate = t => { const [d, m, y] = t.split("/").map(Number); return new Date(y, m - 1, d); };
-function waveEval(rev){
-  for (const w of WAVES) { const hit = w[2].find(y => num(rev[y]) > w[1]); if (hit) return {w, year: hit}; }
+const wvProg = () => WAVE_PROGRAMS.find(p => p.id === S.ui.wprog) || WAVE_PROGRAMS[0];
+function waveEval(P, rev){
+  for (const w of P.waves) { const hit = w[2].find(y => num(rev[y]) > w[1]); if (hit) return {w, year: hit}; }
   return null;
 }
 function waveHtml(){
-  const rev = S.ui.wrev || (S.ui.wrev = {}), r = waveEval(rev), any = WV_YEARS.some(y => num(rev[y]) > 0);
+  const P = wvProg(), all = (S.ui.wrevP = S.ui.wrevP || {}), rev = all[P.id] || (all[P.id] = {}), r = waveEval(P, rev), any = P.years.some(y => num(rev[y]) > 0);
+  const last = P.waves[P.waves.length - 1];
   let res;
-  if (!any) res = `<div class="note">اكتب الإيرادات الخاضعة للضريبة لكل سنة عندك أرقامها، والنتيجة هتظهر هنا.</div>`;
-  else if (!r) res = `<div class="ded-res ok"><h4>المنشأة لسه مش داخلة في أي موجة معلنة</h4><ul><li>ولا سنة من سنين المرجع عدّت حد الموجة 25 (187,500 ﷼).</li><li>المرحلة الأولى (الإصدار) مطبقة عليها من 04/12/2021: فواتير من نظام إلكتروني متوافق وفيها QR.</li><li>تابع إعلانات الهيئة. كل موجة بتتبلغ قبل موعدها بـ 6 شهور على الأقل.</li></ul></div>`;
+  if (!any) res = `<div class="note">اكتب ${P.metric} لكل سنة عندك أرقامها، والنتيجة هتظهر هنا.</div>`;
+  else if (!r) res = `<div class="ded-res ok"><h4>المنشأة لسه مش داخلة في أي موجة معلنة</h4><ul><li>ولا سنة من سنين المرجع عدّت حد آخر موجة معلنة (الموجة ${last[0]}: ${fmt(last[1]).replace(/\.00$/, "")} ${P.unit}).</li>${(P.none || []).map(x => `<li>${x}</li>`).join("")}<li>تابع إعلانات الجهة الرسمية؛ الموجات الجديدة بتتعلن قبل موعدها.</li></ul></div>`;
   else {
-    const [n, th, ys, dt] = r.w, late = dmyToDate(dt) < new Date();
-    res = `<div class="ded-res ${late ? "no" : "part"}"><h4>المنشأة في الموجة ${n} — ${n <= 16 ? "بداية الربط" : "آخر موعد للربط"}: ${dt}</h4><ul>
-      <li>السبب: إيرادات سنة ${r.year} (${fmt(num(rev[r.year]))} ﷼) أكبر من حد الموجة ${n} (${fmt(th)} ﷼). سنين المرجع للموجة دي: ${ys.join(" أو ")}.</li>
-      <li>${late ? "الموعد عدّى. لو المنشأة لسه ما ربطتش، هي مخالفة ومعرضة للغرامات، ولازم تربط فوراً." : "الموعد لسه ما جاش. لازم النظام يكون مربوط بمنصة «فاتورة» قبله."}</li>
-      <li>الإيرادات بتتحسب على كل سنة لوحدها، مش مجموع السنين. ولو الإيرادات نزلت بعد كده، المنشأة بتفضل داخلة.</li></ul></div>`;
+    const [n, th, ys, dt, kind] = r.w, late = dmyToDate(dt) < new Date();
+    res = `<div class="ded-res ${late ? "no" : "part"}"><h4>${P.short}: المنشأة في الموجة ${n} — ${kind === "start" ? "بداية التطبيق" : "آخر موعد"}: ${dt}</h4><ul>
+      <li>السبب: ${P.metric} لسنة ${r.year} (${fmt(num(rev[r.year]))} ${P.unit}) أكبر من حد الموجة ${n} (${fmt(th)} ${P.unit}). سنين المرجع للموجة دي: ${ys.join(" أو ")}.</li>
+      <li>${late ? "الموعد عدّى. لو المنشأة لسه ما طبقتش، هي مخالفة ومعرضة للغرامات، ولازم تطبق فوراً." : `الموعد لسه ما جاش. لازم تكون جاهز على ${P.platform} قبله.`}</li>
+      <li>كل سنة بتتحسب لوحدها، مش مجموع السنين. ولو الرقم نزل بعد كده، المنشأة بتفضل داخلة.</li></ul></div>`;
   }
-  return dlgHtml("هل منشأتي داخلة في الربط؟ (المرحلة الثانية من الفوترة الإلكترونية)", `
-   <div class="note" style="margin-bottom:10px">اكتب <b>الإيرادات الخاضعة لضريبة القيمة المضافة</b> لكل سنة. الأداة بتدوّر على أول موجة عدّت حدها في أي سنة من سنين المرجع بتاعتها. أداة تدريبية، والحدود والمواعيد من مصادر ثانوية وتتراجع على بوابة «فاتورة».</div>
-   <div class="wv-in">${WV_YEARS.map(y => `<label>إيرادات ${y} (﷼)<input data-wrev="${y}" inputmode="decimal" placeholder="0" value="${esc(rev[y] || "")}"></label>`).join("")}</div>
+  const sel = WAVE_PROGRAMS.length > 1 ? `<div class="fld" style="margin-bottom:10px"><label>البرنامج</label><select data-wprog="1">${WAVE_PROGRAMS.map(p => `<option value="${p.id}" ${p.id === P.id ? "selected" : ""}>${p.name}</option>`).join("")}</select></div>` : `<div class="small muted" style="margin-bottom:8px">البرنامج: <b>${P.name}</b> · الأداة عامة، وأي برنامج جديد بموجات (ربط أو تطبيق تدريجي) بيتضاف هنا.</div>`;
+  return dlgHtml("هل منشأتي داخلة في الموجة؟", `${sel}
+   <div class="note" style="margin-bottom:10px">اكتب <b>${P.metric}</b> لكل سنة. الأداة بتدوّر على أول موجة عدّت حدها في أي سنة من سنين المرجع بتاعتها. أداة تدريبية — المصدر: ${P.source}.</div>
+   <div class="wv-in">${P.years.map(y => `<label>${y} (${P.unit})<input data-wrev="${y}" inputmode="decimal" placeholder="0" value="${esc(rev[y] || "")}"></label>`).join("")}</div>
    <div id="wvRes">${res}</div>
-   <div class="wv-scroll"><table class="wv-tbl"><thead><tr><th>الموجة</th><th>الإيرادات أكتر من (﷼)</th><th>سنين المرجع</th><th>الموعد</th></tr></thead><tbody>
-    ${WAVES.map(([n, th, ys, dt]) => `<tr class="${r && r.w[0] === n ? "me" : ""}"><td class="n">${n}</td><td class="n">${fmt(th).replace(/\.00$/, "")}</td><td>${ys.join("، ")}</td><td class="n">${dt}</td></tr>`).join("")}
+   <div class="wv-scroll"><table class="wv-tbl"><thead><tr><th>الموجة</th><th>الحد — أكبر من (${P.unit})</th><th>سنين المرجع</th><th>التاريخ</th></tr></thead><tbody>
+    ${P.waves.map(([n, th, ys, dt]) => `<tr class="${r && r.w[0] === n ? "me" : ""}"><td class="n">${n}</td><td class="n">${fmt(th).replace(/\.00$/, "")}</td><td>${ys.join("، ")}</td><td class="n">${dt}</td></tr>`).join("")}
    </tbody></table></div>
-   <div class="small" style="margin-top:8px;color:var(--muted)">الموجات 1–16: التاريخ هو بداية فترة الربط (حوالي 6 شهور). من الموجة 17: آخر موعد لإتمام الربط. الموجة 25 اتعلنت يوم 24/07/2026، وهي آخر موجة معلنة لحد 09/10/2026.</div>`,
+   ${P.note ? `<div class="small" style="margin-top:8px;color:var(--muted)">${P.note}</div>` : ""}`,
    `<button type="button" class="btn" data-act="waveReset">مسح</button><button type="button" class="btn primary" data-act="closeModal">إغلاق</button>`);
 }
 function waveDraw(){ const m = $("#modal"); if (m.hidden || !DLG || DLG.t !== "wave") return; const a = document.activeElement, id = a && a.dataset ? a.dataset.wrev : null, pos = a && a.selectionStart; m.querySelector(".dlg").innerHTML = waveHtml(); if (id) { const n = m.querySelector(`[data-wrev="${id}"]`); if (n) { n.focus({preventScroll: true}); try { n.setSelectionRange(pos, pos); } catch (e) {} } } }
-document.addEventListener("input", e => { const t = e.target; if (!t.dataset || !t.dataset.wrev) return; S.ui.wrev[t.dataset.wrev] = t.value.replace(/[٠-٩]/g, c => "٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/[^\d.,]/g, ""); save(); waveDraw(); });
+document.addEventListener("input", e => { const t = e.target; if (!t.dataset || !t.dataset.wrev) return; const P = wvProg(); S.ui.wrevP = S.ui.wrevP || {}; (S.ui.wrevP[P.id] = S.ui.wrevP[P.id] || {})[t.dataset.wrev] = t.value.replace(/[٠-٩]/g, c => "٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/[^\d.,]/g, ""); save(); waveDraw(); });
+document.addEventListener("change", e => { const t = e.target; if (!t.dataset || !t.dataset.wprog) return; S.ui.wprog = t.value; save(); waveDraw(); });
+/* تنبيهات الموجات القادمة (آخر موعد لكل برنامج) بتدخل شريط التنبيهات لوحدها */
+function waveEvents(){ return WAVE_PROGRAMS.map(P => { const t0 = todayUTC(); const w = P.waves.filter(w => w[4] !== "start").map(w => ({w, d: pd(w[3].split("/").reverse().join("-"))})).filter(x => x.d >= t0).sort((a, b) => a.d - b.d)[0]; return w ? {d: w.w[3].split("/").reverse().join("-"), t: `${P.short}: آخر موعد للموجة ${w.w[0]} (${P.metric} أكبر من ${fmt(w.w[1]).replace(/\.00$/, "")} ${P.unit})`, warn: 120, act: "waveOpen"} : null; }).filter(Boolean); }
 /* ===================== قوالب Excel: تنزيل نموذج لكل إقرار، تعبئته، ثم رفعه للمراجعة والحساب =====================
    المكتبة: xlsx-js-style (SheetJS + تنسيق) من jsdelivr، بتتحمل وقت الحاجة بس.
    القالب مبني من تعريف الحقول نفسه في المحاكي، فأي بند جديد بيظهر في القالب لوحده.
@@ -3613,7 +3630,7 @@ function guideLinksHtml(){
    الاستقطاع يوم 10 من الشهر التالي. لو الموعد جه إجازة رسمية بيتمد لأول يوم عمل — المرجع تقويم الهيئة.
    ST_EVENTS: قرارات/مواعيد بتدخل حيز التنفيذ — بتتحدث يدوي من هنا. */
 const ST_EVENTS = [
-  {d: "2027-02-01", t: "آخر موعد لربط الموجة 25 من الفوترة الإلكترونية (إيرادات أكبر من 187,500 ﷼ في 2022–2025)", warn: 120, act: "waveOpen"}
+  /* {d: "yyyy-mm-dd", t: "نص القرار اللي بيدخل حيز التنفيذ", warn: 60} — مواعيد الموجات بتتضاف لوحدها من WAVE_PROGRAMS */
 ];
 const ST_CAL = "https://zatca.gov.sa/ar/MediaCenter/Publications/Documents/Zakat%20Declaration%20and%20Tax%20Returns%20Calendar.pdf";
 function stDeadlines(){
@@ -3627,7 +3644,7 @@ function stDeadlines(){
   [m - 1, m].forEach(mm => { const pe = new Date(endOf(y, mm)), py = pe.getUTCFullYear(), pm = pe.getUTCMonth();
     out.push({due: endOf(py, pm + 1), warn: 10, t: `إقرار القيمة المضافة الشهري (${MONTHS[pm]} ${py})`, act: "vat"});
     out.push({due: D(py, pm + 1, 10), warn: 10, t: `نموذج الاستقطاع الشهري (${MONTHS[pm]} ${py})`, act: "wht"}); });
-  ST_EVENTS.forEach(e => out.push({due: pd(e.d), warn: e.warn || 60, t: e.t, ev: 1, act: e.act}));
+  ST_EVENTS.concat(typeof waveEvents === "function" ? waveEvents() : []).forEach(e => out.push({due: pd(e.d), warn: e.warn || 60, t: e.t, ev: 1, act: e.act}));
   return out.filter(x => x.due != null && x.due >= t0 && (x.due - t0) / 864e5 <= x.warn).map(x => Object.assign(x, {days: Math.round((x.due - t0) / 864e5)})).sort((a, b) => a.due - b.due);
 }
 function renderAlerts(){
@@ -3762,7 +3779,7 @@ const ACT = {
   attDel(el){ S.att.splice(+el.dataset.i, 1); openAttach(); render(); save(); },
   quiz(){ openQuiz(); }, qans(el){ QUIZ_ANS[+el.dataset.q] = +el.dataset.j; const sc = $(".dlg-b").scrollTop; openQuiz(); $(".dlg-b").scrollTop = sc; },
   qreset(){ QUIZ_ANS = {}; openQuiz(); },
-  json(){ openJson(); }, copyJson(){ copyText($("#jsonTa").value); },
+  json(){ if (document.getElementById("jsonBtn").hidden) return; openJson(); }, copyJson(){ copyText($("#jsonTa").value); },
   reset(){ openModal(dlgHtml("إعادة البدء", `<p style="margin-top:0">هتتمسح كل البيانات والإقرارات المقدمة، وترجع للشاشة الأولى. متأكد؟</p>`, `<button type="button" class="btn" data-act="closeModal">إلغاء</button><button type="button" class="btn danger" data-act="resetOk">نعم، امسح</button>`), "sm"); },
   resetOk(){ const ex = S.ui.explain; S = loadCase("re2024"); S.ui.explain = ex; try { localStorage.removeItem(KEY); } catch (e) {} closeModal(); go("search"); }
 };
@@ -3888,6 +3905,7 @@ function armIdle(){
 ["click", "keydown", "input", "change"].forEach(ev => document.addEventListener(ev, armIdle, true));
 
 /* ===================== التشغيل ===================== */
+try { if (/[?&]admin=1\b/.test(location.search)) document.getElementById("jsonBtn").hidden = false; } catch (e) {}
 render(); armIdle(); renderAlerts(); setInterval(renderAlerts, 36e5);
 
 </script>
