@@ -926,6 +926,15 @@ details[open]>summary .chev{transform:rotate(225deg)}
 .wz-bar.wz-bar-w .btn{font-size:16px;font-weight:500}
 .wz-bar.wz-bar-w .btn.gray:disabled{background:var(--side-on);border-color:transparent;color:#9DA4AE;opacity:1;cursor:not-allowed}
 @media (max-width:640px){.wf-grid{grid-template-columns:minmax(0,1fr)}}
+.tl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.tl-card{display:flex;flex-direction:column;gap:4px;text-align:right;padding:12px;border:1px solid #cfe3d6;border-radius:10px;background:#f7fbf8;cursor:pointer;font:inherit}
+.tl-card:hover{border-color:#1a7f4b;background:#eef7f1}.tl-card span{font-size:12px;color:#555}
+.hunt-it{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid #e3e3e3;border-radius:8px;margin:6px 0;cursor:pointer}
+.hunt-it small{display:block;margin-top:4px;font-size:12px;color:#444}.hunt-it.bad{border-color:#e0a3a3;background:#fdf3f3}.hunt-it.good{border-color:#a8d5b9;background:#f2faf5}
+.gl-it{padding:8px 0;border-bottom:1px solid #eee}.gl-it p{margin:3px 0 0;font-size:13px;color:#444}
+.zb-r{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:4px 0}.zb-r label{flex:1;font-size:13px}.zb-r input,.zb-r select{width:170px;max-width:50%}
+.zb-t{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}.zb-t td{border:1px solid #ddd;padding:6px}.zb-t .num{text-align:left;direction:ltr;white-space:nowrap}.zb-t tr.tot td{background:#1a7f4b;color:#fff}
+@media(max-width:520px){.zb-r{flex-direction:column;align-items:stretch}.zb-r input,.zb-r select{width:100%;max-width:none}}
 </style>
 </head>
 <body>
@@ -943,6 +952,7 @@ details[open]>summary .chev{transform:rotate(225deg)}
       <select id="caseSel" aria-label="الحالة التدريبية"></select>
       <button class="tbtn" id="explainBtn" aria-pressed="false" type="button">وضع الشرح</button>
       <button class="tbtn" data-act="quiz" type="button">اختبر نفسك</button>
+      <button class="tbtn" data-act="toolsOpen" type="button">أدوات التدريب</button>
       <button class="tbtn" data-act="waveOpen" type="button">الموجات</button>
       <button class="tbtn" data-act="xlDlg" type="button">قوالب Excel</button>
       <button class="tbtn" data-act="json" type="button" id="jsonBtn" hidden>نسخ JSON</button>
@@ -2029,6 +2039,7 @@ function go(screen, step){ S.screen = screen; if (step != null) S.step = step; S
 
 function applyCase(id){
   const n = loadCase(id);
+  S.ui.caseT0 = Date.now();
   S.caseId = id; S.ret = n.ret; S.ui.tab = n.ret; S.decl = false; S.att = (n.ret === "f10") ? [] : S.att; S.step = 0;
   S.ui.inited = Object.assign(S.ui.inited || {}, {[n.ret]: true});
   if (n.ret === "f10") { ["info","v","app","sch","bs","fsNP","tp","note","terms"].forEach(k => { S[k] = n[k]; }); }
@@ -2349,6 +2360,7 @@ function submitNow(){
   const sub = {id: "S" + ts, type: t, key: pi.key, code: (perOf(t, 0) || {}).code || "", label: RET_NAME[t] + (prev ? " (معدل)" : ""), period: pi.label, name: pi.name, date: nowStr(), ts, due: pi.due, ref: refFor(t), amount, full, parts, amendOf: prev ? prev.id : null};
   S.ui.amendOf = null;
   S.flow.subs.push(sub);
+  try { perfFromSub(sub); } catch (e) {}
   if (amount > 0.004) { const b = {no: "TR-" + rnd(10), sub: sub.id, type: t, ref: sub.ref, amount, due: pi.due, period: pi.label, paid: false}; S.flow.bills.push(b); S.ui.bill = b.no; }
   S.ui.lastSub = sub.id; S.decl = false;
   closeModal(); go("done");
@@ -3673,6 +3685,182 @@ function renderAlerts(){
   el.innerHTML = list.map(x => `<span class="st-al ${x.ev ? "ev" : x.days <= 7 ? "hot" : ""}">${x.ev ? "📌" : "⏰"} <span>${x.days === 0 ? "<b>النهارده</b>" : x.days === 1 ? "<b>بكرة</b>" : `باقي <b>${x.days}</b> يوم`} — ${x.t} · آخر موعد <b class="num">${fmtD(x.due)}</b></span>${x.act ? ` <a href="#" data-act="alGo" data-v="${x.act}">${x.act === "waveOpen" ? "شوف الموجات" : "تدرّب عليه"}</a>` : ""}</span>`).join("")
     + `<span class="st-al" style="background:none;border:0">الأحوط تقدّم وتسدد قبل الموعد المكتوب، وما تعتمدش على أي تمديد إلا بإعلان رسمي · المرجع <a href="${ST_CAL}" target="_blank" rel="noopener">تقويم الهيئة</a></span><button type="button" class="st-al-x" data-act="alHide" aria-label="إخفاء التنبيهات">إخفاء ✕</button>`;
 }
+/* ===================== أدوات التدريب: اكتشف الخطأ + القاموس + الوعاء الزكوي + تقرير الأداء + وضع المدرب ===================== */
+const TRAINER = /[?&](trainer|admin)=1\b/.test(location.search);
+const HUNT = [
+ {id:"h1", t:"إقرار قيمة مضافة — شركة تجارية (أغسطس 2026)", ret:"vat",
+  p:"المحاسب جهّز الإقرار ده. علّم كل سطر شايفه غلط، وبعدين اضغط «صحّح».",
+  items:[
+   {s:"مبيعات محلية 500,000 ريال في البند 1 وضريبتها 75,000.", bad:false, w:"صح: 15% من 500,000."},
+   {s:"صادرات خارج دول المجلس 200,000 ريال متسجلة في البند 1 (المبيعات الخاضعة للنسبة الأساسية).", bad:true, w:"الصادرات مكانها البند 4 (الصادرات) بنسبة صفر، بشرط مستندات التصدير."},
+   {s:"مشتريات من مورد غير مسجل في الضريبة 30,000 ريال، والمحاسب خصم عليها ضريبة 4,500.", bad:true, w:"المورد غير المسجل ما بيحصّلش ضريبة، فمفيش ضريبة مدخلات تتخصم عنها."},
+   {s:"خدمة استشارية من شركة في ألمانيا 100,000 ريال: البند 10 (الاحتساب العكسي) بضريبة 15,000 والبند 11 مشتريات بنفس الضريبة.", bad:false, w:"صح: الخدمة المستوردة بتتسجل مرتين، مرة كمخرجات ومرة كمدخلات، وأثرها الصافي صفر لو التاجر يحق له الخصم الكامل."},
+   {s:"ضريبة فاتورة ضيافة وترفيه لعملاء 6,000 ريال اتخصمت كاملة.", bad:true, w:"مصاريف الضيافة والترفيه مستبعدة من الخصم في اللائحة (مع استثناءات محدودة)."},
+   {s:"واردات جمركية 300,000 ريال والضريبة 45,000 مسددة للجمارك، اتسجلت في بند الواردات الخاضعة المسددة في الجمارك.", bad:false, w:"صح: ضريبة الاستيراد المسددة في الجمارك بتتخصم بالبيان الجمركي."},
+   {s:"فاتورة شراء باسم المدير الشخصي مش باسم الشركة، وضريبتها اتخصمت.", bad:true, w:"الفاتورة لازم تكون للمنشأة نفسها عشان ضريبتها تتخصم."}]},
+ {id:"h2", t:"إقرار قيمة مضافة — مقاول (الربع الثالث 2026)", ret:"vat",
+  p:"إقرار ربع سنوي لشركة مقاولات. فيه أخطاء شائعة في التوقيت والإشعارات.",
+  items:[
+   {s:"مستخلص تم إصدار فاتورته في 28/09/2026 واتحصّل في 15/10/2026، المحاسب أجّله لإقرار الربع الرابع.", bad:true, w:"الضريبة بتستحق بالأسبق من إصدار الفاتورة أو التوريد أو التحصيل. الفاتورة صدرت في الربع الثالث فتدخل فيه."},
+   {s:"دفعة مقدمة 115,000 ريال شاملة الضريبة اتسجلت كمبيعات 100,000 وضريبة 15,000 في نفس الفترة.", bad:false, w:"صح: الدفعة المقدمة بتستحق عليها الضريبة عند استلامها، والمبلغ شامل الضريبة بيتفصل."},
+   {s:"إشعار دائن لعميل بخصم 20,000 اتخصم من المبيعات من غير إصدار إشعار دائن إلكتروني.", bad:true, w:"تخفيض المبيعات لازم يكون بإشعار دائن مستوفي الشروط ومرتبط بالفاتورة الأصلية."},
+   {s:"ضمان محتجز (محتجزات) 50,000 ريال ما اتحصلش، والفاتورة الأصلية اتحسبت ضريبتها كاملة شاملة المحتجز.", bad:false, w:"صح غالباً: لو الفاتورة صدرت بالمبلغ كامل فالضريبة على المبلغ كامل وقت الفاتورة."},
+   {s:"شراء سيارة صالون لمدير المشروع وخصم ضريبتها كاملة.", bad:true, w:"السيارات الخاصة مقيدة الخصم إلا في الاستثناءات اللي في اللائحة (زي سيارات الأجرة أو التأجير أو التدريب)."},
+   {s:"الإقرار اتقدّم يوم 31/10/2026.", bad:false, w:"صح: آخر موعد للربع الثالث نهاية الشهر التالي، 31/10/2026."}]},
+ {id:"h3", t:"إقرار استقطاع — دفعات لغير مقيمين (سبتمبر 2026)", ret:"wht",
+  p:"علّم الصفوف اللي فيها خطأ في النسبة أو المعالجة.",
+  items:[
+   {s:"أتعاب إدارة لشركة أم بالخارج 100,000 ريال: استقطاع 20%.", bad:false, w:"صح: أتعاب الإدارة 20%."},
+   {s:"إتاوة (رسوم برنامج مرخص) 200,000 ريال: استقطاع 5%.", bad:true, w:"الإتاوات 15%."},
+   {s:"خدمات فنية واستشارية 80,000 ريال: استقطاع 5%.", bad:false, w:"صح: الخدمات الفنية والاستشارية 5% (لغير الطرف المرتبط)."},
+   {s:"إيجار معدات لمؤجر غير مقيم 120,000 ريال: استقطاع 15%.", bad:true, w:"الإيجار 5%."},
+   {s:"المبلغ المدفوع 90,000 بعد الاستقطاع، والمحاسب حسب الضريبة على 90,000.", bad:true, w:"الضريبة بتتحسب على إجمالي المبلغ المستحق قبل الاستقطاع. لو المنشأة اتحملت الضريبة فالمبلغ بيتعدّل للإجمالي (Gross-up)."},
+   {s:"الإقرار والسداد في 10/10/2026.", bad:false, w:"صح: الاستقطاع بيتقدم ويتسدد خلال أول 10 أيام من الشهر التالي."}]},
+ {id:"h4", t:"إقرار الزكاة — شركة سعودية (2025)", ret:"f10",
+  p:"علّم البنود اللي اتعالجت غلط في حساب الوعاء الزكوي.",
+  items:[
+   {s:"رأس المال 2,000,000 ريال اتضاف للوعاء.", bad:false, w:"صح: رأس المال من مصادر التمويل اللي بتتضاف."},
+   {s:"صافي الأصول الثابتة 1,500,000 ريال اتخصم من الوعاء.", bad:false, w:"صح: الأصول غير المتداولة المقتناة للاستخدام بتتخصم."},
+   {s:"مخزون بضاعة 800,000 ريال اتخصم من الوعاء.", bad:true, w:"المخزون عروض تجارة وبيدخل في الوعاء، ما بيتخصمش."},
+   {s:"مخصص ديون مشكوك فيها اتخصم كمصروف جائز بالكامل عند تعديل صافي الربح.", bad:true, w:"المخصصات بتترد لصافي الربح (غير جائزة)، والجائز هو الديون المعدومة فعلياً بشروطها."},
+   {s:"قرض طويل الأجل 1,000,000 مستخدم في شراء أصول ثابتة، اتضاف للوعاء.", bad:false, w:"صح: التمويل طويل الأجل المستخدم في أصول مخصومة بيتضاف في حدود ما مُوّل به."},
+   {s:"غرامات مخالفات 25,000 ريال اتخصمت كمصروف.", bad:true, w:"الغرامات مصروف غير جائز وبيترد لصافي الربح."},
+   {s:"الإقرار اتقدم 20/04/2026.", bad:false, w:"صح: قبل 30/04/2026 (120 يوم من نهاية السنة)."}]}
+];
+const GLOSS = [
+ ["الوعاء الزكوي","المبلغ اللي بتتحسب عليه الزكاة: مصادر التمويل (رأس المال، الاحتياطيات، الأرباح المبقاة، صافي الربح المعدل، التمويل طويل الأجل) مطروحاً منها الأصول المحسومة."],
+ ["صافي الربح المعدل","صافي الربح الدفتري بعد رد المصروفات غير الجائزة (المخصصات، الغرامات، ...) وطرح الإيرادات غير الخاضعة."],
+ ["السنة الهجرية / الميلادية","نسبة الزكاة 2.5% للسنة الهجرية، وبتتعدل بنسبة الأيام لو السنة المالية ميلادية (≈ 2.5776%)."],
+ ["ضريبة المخرجات","الضريبة اللي المنشأة بتحصلها على مبيعاتها الخاضعة."],
+ ["ضريبة المدخلات","الضريبة المدفوعة على المشتريات والمصروفات، وبتتخصم من المخرجات بشروط الخصم."],
+ ["الاحتساب العكسي","لما المورد غير مقيم، المستلم في المملكة هو اللي بيحسب الضريبة ويسجلها كمخرجات ومدخلات."],
+ ["النسبة الصفرية","توريد خاضع للضريبة بنسبة 0% (زي الصادرات)، وبيحتفظ المورد بحق خصم ضريبة مدخلاته."],
+ ["التوريد المعفى","توريد ما عليهوش ضريبة ومش من حق المورد يخصم ضريبة المدخلات المرتبطة بيه (زي بعض الخدمات المالية وتأجير السكن)."],
+ ["الخصم التناسبي","لما المنشأة عندها توريدات خاضعة ومعفاة، ضريبة المدخلات المشتركة بتتخصم بنسبة التوريدات الخاضعة."],
+ ["الإشعار الدائن / المدين","مستند بيعدّل فاتورة سابقة بالنقص (دائن) أو بالزيادة (مدين)، ولازم يرتبط بالفاتورة الأصلية."],
+ ["الفاتورة الضريبية / المبسطة","الضريبية بين المنشآت وفيها بيانات المشتري، والمبسطة للمستهلك أو للمبالغ الصغيرة."],
+ ["تاريخ الاستحقاق الضريبي","الأسبق من إصدار الفاتورة أو التوريد أو استلام المقابل."],
+ ["ضريبة الاستقطاع","ضريبة بتتخصم من مبالغ مدفوعة لغير مقيم من مصدر في المملكة، والدافع هو المسؤول عن توريدها."],
+ ["المنشأة الدائمة","وجود ثابت لغير المقيم في المملكة بيمارس منه النشاط، وبيخضع لضريبة الدخل."],
+ ["الطرف المرتبط","أطراف بينها سيطرة أو ملكية مشتركة؛ بعض نسب الاستقطاع ومعاملات تسعير التحويل بتختلف بسببه."],
+ ["اتفاقية منع الازدواج الضريبي","اتفاقية بين المملكة ودولة تانية ممكن تخفّض نسبة الاستقطاع بشرط إثبات الإقامة الضريبية."],
+ ["الربط والتكامل (الموجة)","إلزام فئة من المكلفين بربط أنظمتهم بمنصة الهيئة في موعد محدد حسب إيراداتهم."],
+ ["الرقم المميز / الرقم الضريبي","الرقم المميز 10 أرقام يبدأ بـ 3 لحساب المكلف، والرقم الضريبي للقيمة المضافة 15 رقم يبدأ وينتهي بـ 3."],
+ ["الربط الزكوي (التقييم)","قرار الهيئة بالمبلغ المستحق بعد فحص الإقرار، ويقبل الاعتراض في المدة النظامية."],
+ ["غرامة التأخير","غرامات على التأخر في التقديم أو السداد، ونسبها بتختلف حسب نوع الضريبة."],
+ ["الضريبة الانتقائية","ضريبة على سلع ضارة (التبغ، مشروبات الطاقة، المشروبات المحلاة...)."],
+ ["ضريبة التصرفات العقارية","5% من قيمة التصرف في العقار، بيلتزم بيها المتصرف عادةً، مع إعفاءات محددة."]
+];
+function huntHtml(){
+  const u = S.ui.hunt || (S.ui.hunt = {i: 0, m: {}, done: false});
+  const H = HUNT[u.i] || HUNT[0], show = u.done || TRAINER;
+  let ok = 0;
+  const rows = H.items.map((it, j) => {
+    const m = !!u.m[j], right = m === it.bad; if (right) ok++;
+    return `<label class="hunt-it ${show ? (it.bad ? "bad" : "good") : ""}"><input type="checkbox" data-act="huntM" data-j="${j}" ${m ? "checked" : ""} ${u.done ? "disabled" : ""}><span>${esc(it.s)}${show ? `<small>${it.bad ? "❌ خطأ: " : "✔️ "}${esc(it.w)}${u.done ? (right ? " — <b>إجابتك صح</b>" : " — <b>إجابتك غلط</b>") : ""}</small>` : ""}</span></label>`;
+  }).join("");
+  const sel = `<select data-act="huntSel" id="huntSel">${HUNT.map((h, i) => `<option value="${i}" ${i === u.i ? "selected" : ""}>${esc(h.t)}</option>`).join("")}</select>`;
+  const body = `<div class="note small">${TRAINER ? "<b>وضع المدرب:</b> الإجابات ظاهرة. " : ""}${esc(H.p)}</div><div style="margin:8px 0">${sel}</div>${rows}${u.done ? `<div class="note ${ok === H.items.length ? "ok" : "warn"}" style="margin-top:8px">النتيجة: <b>${ok} من ${H.items.length}</b></div>` : ""}`;
+  const foot = u.done ? `<button type="button" class="btn" data-act="huntRe">حاول تاني</button><button type="button" class="btn primary" data-act="huntNext">التمرين اللي بعده</button>` : `<button type="button" class="btn primary" data-act="huntChk">صحّح</button>`;
+  return dlgHtml("اكتشف الخطأ", body, foot);
+}
+function huntDraw(){ const d = $("#modal .dlg"); if (d) d.innerHTML = huntHtml(); }
+function glossHtml(){
+  const q = (S.ui.gq || "").trim();
+  const list = GLOSS.filter(g => !q || g[0].includes(q) || g[1].includes(q));
+  return dlgHtml("قاموس المصطلحات", `<input id="gq" class="inp" placeholder="ابحث عن مصطلح..." value="${esc(q)}" style="width:100%;margin-bottom:8px"><div id="glist">${list.map(g => `<div class="gl-it"><b>${esc(g[0])}</b><p>${esc(g[1])}</p></div>`).join("") || `<div class="note small">مفيش نتيجة.</div>`}</div><div class="note small">التعريفات مبسطة للتدريب. المرجع الرسمي: الأنظمة واللوائح وأدلة الهيئة.</div>`);
+}
+const ZB_F = [
+ ["cap","رأس المال المدفوع",1],["res","الاحتياطيات (نظامية واتفاقية)",1],["re","الأرباح المبقاة (المرحلة) أول السنة",1],["np","صافي الربح المعدل للسنة",1],["ltl","التمويل طويل الأجل المستخدم في أصول مخصومة",1],["prov","مخصصات أول السنة (غير المستخدمة)",1],
+ ["fa","صافي الأصول الثابتة",-1],["inv","استثمارات طويلة الأجل في منشآت خاضعة",-1],["loss","خسائر مرحلة (معدلة)",-1],["oth","أصول أخرى محسومة (مشاريع تحت التنفيذ...)",-1]];
+function zbHtml(){
+  const v = S.ui.zb || (S.ui.zb = {});
+  const add = ZB_F.filter(f => f[2] > 0), sub = ZB_F.filter(f => f[2] < 0);
+  const inp = f => `<div class="zb-r"><label for="zb_${f[0]}">${f[1]}</label><input id="zb_${f[0]}" class="inp num" inputmode="decimal" value="${fmtIn(v[f[0]])}"></div>`;
+  return dlgHtml("شرح الوعاء الزكوي خطوة بخطوة", `<div class="note small">١) اجمع مصادر التمويل الخاضعة. ٢) اطرح الأصول المحسومة. ٣) الوعاء لا يقل عن صافي الربح المعدل. ٤) اضرب في 2.5% (أو بنسبة الأيام لو السنة ميلادية).</div>
+  <h4 style="margin:10px 0 4px">١. يضاف</h4>${add.map(inp).join("")}<h4 style="margin:10px 0 4px">٢. يحسم</h4>${sub.map(inp).join("")}
+  <div class="zb-r"><label for="zb_cal">نوع السنة</label><select id="zb_cal"><option value="g" ${v.cal !== "h" ? "selected" : ""}>ميلادية (365 يوم)</option><option value="h" ${v.cal === "h" ? "selected" : ""}>هجرية</option></select></div>
+  <div id="zbOut">${zbOut()}</div>
+  <div class="note small">⚠️ أرقام تقريبية للتدريب. الحساب الفعلي حسب اللائحة التنفيذية لجباية الزكاة والهيئة وحدها المختصة بالربط.</div>`, `<button type="button" class="btn" data-act="zbReset">تفريغ</button><button type="button" class="btn primary" data-act="zbCalc">احسب</button>`);
+}
+function zbOut(){
+  const v = S.ui.zb || {}; let a = 0, s = 0;
+  ZB_F.forEach(f => { const n = num(v[f[0]]); if (f[2] > 0) a += n; else s += n; });
+  const raw = a - s, npv = num(v.np), base = Math.max(raw, npv, 0), rate = v.cal === "h" ? 0.025 : 0.025 * 365 / 354;
+  if (!a && !s) return "";
+  return `<table class="zb-t"><tr><td>إجمالي المضاف</td><td class="num">${fmt(a)}</td></tr><tr><td>إجمالي المحسوم</td><td class="num">(${fmt(s)})</td></tr><tr><td>الناتج</td><td class="num">${fmt(raw)}</td></tr>
+  <tr><td>الوعاء (الأكبر من الناتج وصافي الربح المعدل)</td><td class="num"><b>${fmt(base)}</b></td></tr><tr><td>النسبة</td><td class="num">${(rate * 100).toFixed(4)}%</td></tr><tr class="tot"><td>الزكاة التقريبية</td><td class="num"><b>${fmt(base * rate)}</b></td></tr></table>
+  ${raw < npv ? `<div class="note small warn">الناتج أقل من صافي الربح المعدل، فالوعاء اتاخد = صافي الربح المعدل.</div>` : ""}`;
+}
+/* ---- سجل الأداء: مستقل عن «إعادة البدء» ---- */
+const PERF_KEY = "stPerfLog";
+const perfGet = () => { try { return JSON.parse(localStorage.getItem(PERF_KEY) || "[]"); } catch (e) { return []; } };
+function perfAdd(o){ try { const l = perfGet(); l.push(o); localStorage.setItem(PERF_KEY, JSON.stringify(l.slice(-500))); } catch (e) {} }
+function caseOf(id){ return CASES.concat(VAT_CASES, WHT_CASES).find(c => c.id === id); }
+function perfFromSub(sub){
+  const c = caseOf(S.caseId), ex = c && c.expect;
+  let match = "—";
+  if (ex && !sub.amendOf) match = Object.keys(ex).every(k => Math.abs(num(sub.parts[k]) - num(ex[k])) < 1) ? "مطابق" : "مختلف";
+  const t0 = S.ui.caseT0, mins = t0 ? Math.max(0, Math.round((Date.now() - t0) / 60000)) : null;
+  perfAdd({d: fmtD(Date.now() + 3 * 3600000) , kind: "إقرار", name: RET_NAME[sub.type] + (sub.amendOf ? " (معدل)" : ""), cas: c ? c.name : "حالة حرة", amount: sub.full, expect: ex ? Object.values(ex).reduce((a, b) => a + num(b), 0) : null, match, mins});
+}
+function perfHtml(){
+  const l = perfGet(), hunts = l.filter(x => x.kind === "تمرين"), rets = l.filter(x => x.kind === "إقرار");
+  const okR = rets.filter(x => x.match === "مطابق").length, chk = rets.filter(x => x.match !== "—").length;
+  const sc = hunts.reduce((a, x) => a + x.ok, 0), tot = hunts.reduce((a, x) => a + x.n, 0);
+  const nm = (() => { try { return localStorage.getItem("stTrainee") || ""; } catch (e) { return ""; } })();
+  return dlgHtml("تقرير أداء المتدرب", `<div class="zb-r"><label for="trName">اسم المتدرب</label><input id="trName" class="inp" value="${esc(nm)}" placeholder="اكتب اسمك عشان يظهر في التقرير"></div>
+  <table class="zb-t"><tr><td>إقرارات اتقدمت</td><td class="num">${rets.length}</td></tr><tr><td>مطابقة للحل النموذجي</td><td class="num">${okR} من ${chk}</td></tr><tr><td>تمارين «اكتشف الخطأ»</td><td class="num">${hunts.length}</td></tr><tr><td>درجة التمارين</td><td class="num">${tot ? Math.round(sc / tot * 100) + "%" : "—"}</td></tr></table>
+  <div class="note small">السجل محفوظ على الجهاز ده بس، ومش بيتمسح بـ«إعادة البدء». نزّله Excel وابعته للمدرب.</div>`,
+  `<button type="button" class="btn" data-act="perfClr">مسح السجل</button><button type="button" class="btn primary" data-act="perfXl" ${l.length ? "" : "disabled"}>تنزيل Excel</button>`);
+}
+async function perfXl(){
+  try {
+    const X = await xlLib(), l = perfGet(), nm = (() => { try { return localStorage.getItem("stTrainee") || ""; } catch (e) { return ""; } })();
+    const rows = xlTop("تقرير أداء المتدرب" + (nm ? " — " + nm : ""), "محاكي START TIME التدريبي · تاريخ التقرير " + fmtD(Date.now() + 3 * 3600000));
+    rows.push(xlHead(["م", "التاريخ", "النوع", "البيان", "الحالة / التمرين", "المبلغ المقدم", "الحل النموذجي", "النتيجة", "الوقت (دقيقة)"]));
+    l.forEach((x, i) => rows.push([{v: i + 1, s: XS.code}, {v: x.d, s: XS.code}, {v: x.kind, s: XS.txt}, {v: x.name, s: XS.txt}, {v: x.cas, s: XS.txt},
+      x.amount != null ? {v: x.amount, s: XS.calc} : {v: "", s: XS.txt}, x.expect != null ? {v: x.expect, s: XS.calc} : {v: "", s: XS.txt},
+      {v: x.kind === "تمرين" ? x.ok + " من " + x.n : x.match, s: XS.txt}, {v: x.mins == null ? "" : x.mins, s: XS.code}]));
+    rows.push([]); rows.push([{v: "النتائج تدريبية فقط ولا تمثل أي تقييم من هيئة الزكاة والضريبة والجمارك.", s: XS.note}]);
+    const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, xlSheet(X, rows, [1,1,1,1,1,1,1,1,1]), "تقرير الأداء");
+    X.writeFile(wb, "تقرير_أداء_المتدرب" + (nm ? "_" + nm.replace(/\s+/g, "_") : "") + ".xlsx");
+  } catch (e) { toast(e.message || "حصل خطأ في إنشاء الملف"); }
+}
+function keyHtml(){
+  const all = CASES.concat(VAT_CASES, WHT_CASES).filter(c => c.expect);
+  const lab = {zakat: "الزكاة", tax: "الضريبة", net: "صافي الضريبة"};
+  return dlgHtml("مفتاح الحلول (وضع المدرب)", `<table class="zb-t">${all.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${Object.keys(c.expect).map(k => (lab[k] || k) + ": " + fmt(c.expect[k])).join("<br>")}</td></tr>`).join("")}</table><div class="note small">الأرقام دي ناتج محرك المحاكي للحالة بأرقامها الأصلية، ومش حساب رسمي.</div>`);
+}
+function toolsHtml(){
+  const b = (a, t, d) => `<button type="button" class="tl-card" data-act="${a}"><b>${t}</b><span>${d}</span></button>`;
+  return dlgHtml("أدوات التدريب", `<div class="tl-grid">${b("huntOpen", "اكتشف الخطأ", "إقرارات فيها أخطاء شائعة، علّمها وصحّح نفسك")}${b("zbOpen", "الوعاء الزكوي خطوة بخطوة", "حاسبة تقريبية بتشرح المضاف والمحسوم")}${b("glossOpen", "قاموس المصطلحات", "تعريفات مبسطة لأهم المصطلحات")}${b("perfOpen", "تقرير الأداء", "سجل إقراراتك وتمارينك وتنزيله Excel")}${TRAINER ? b("keyOpen", "مفتاح الحلول", "الحل النموذجي لكل حالة (للمدرب)") : ""}</div>`);
+}
+const ACT_TOOLS = {
+  toolsOpen(){ DLG = {t: "tools"}; openModal(toolsHtml()); },
+  huntOpen(){ DLG = {t: "hunt"}; openModal(huntHtml()); },
+  huntM(el){ const u = S.ui.hunt; if (u.done) return; u.m[+el.dataset.j] = !!el.checked; save(); },
+  huntSel(){},
+  huntChk(){ const u = S.ui.hunt, H = HUNT[u.i]; u.done = true; const ok = H.items.filter((it, j) => !!u.m[j] === it.bad).length; perfAdd({d: fmtD(Date.now() + 3 * 3600000), kind: "تمرين", name: "اكتشف الخطأ", cas: H.t, ok, n: H.items.length, match: ok + " من " + H.items.length, mins: null}); save(); huntDraw(); },
+  huntRe(){ const u = S.ui.hunt; u.m = {}; u.done = false; save(); huntDraw(); },
+  huntNext(){ const u = S.ui.hunt; u.i = (u.i + 1) % HUNT.length; u.m = {}; u.done = false; save(); huntDraw(); },
+  glossOpen(){ DLG = {t: "gloss"}; openModal(glossHtml()); },
+  zbOpen(){ DLG = {t: "zb"}; openModal(zbHtml()); },
+  zbCalc(){ const v = S.ui.zb = S.ui.zb || {}; ZB_F.forEach(f => { const e = $("#zb_" + f[0]); if (e) v[f[0]] = num(String(e.value).replace(/,/g, "")); }); v.cal = $("#zb_cal").value; save(); $("#zbOut").innerHTML = zbOut(); },
+  zbReset(){ S.ui.zb = {}; save(); $("#modal .dlg").innerHTML = zbHtml(); },
+  perfOpen(){ DLG = {t: "perf"}; openModal(perfHtml()); },
+  perfXl(){ const n = $("#trName"); if (n) try { localStorage.setItem("stTrainee", n.value.trim()); } catch (e) {} perfXl(); },
+  perfClr(){ if (!perfGet().length) return; try { localStorage.removeItem(PERF_KEY); } catch (e) {} $("#modal .dlg").innerHTML = perfHtml().replace(/^/, ""); toast("السجل اتمسح"); },
+  keyOpen(){ if (!TRAINER) return; DLG = {t: "key"}; openModal(keyHtml()); }
+};
+document.addEventListener("change", e => {
+  if (e.target && e.target.id === "huntSel") { const u = S.ui.hunt; u.i = +e.target.value; u.m = {}; u.done = false; save(); huntDraw(); }
+  if (e.target && e.target.id === "trName") try { localStorage.setItem("stTrainee", e.target.value.trim()); } catch (x) {}
+});
+document.addEventListener("input", e => {
+  if (e.target && e.target.id === "gq") { S.ui.gq = e.target.value; const q = S.ui.gq.trim(); const l = GLOSS.filter(g => !q || g[0].includes(q) || g[1].includes(q)); $("#glist").innerHTML = l.map(g => `<div class="gl-it"><b>${esc(g[0])}</b><p>${esc(g[1])}</p></div>`).join("") || `<div class="note small">مفيش نتيجة.</div>`; }
+});
+
 const ACT = {
   alGo(el, e){ if (e) e.preventDefault(); const v = el.dataset.v; if (v === "waveOpen") return ACT.waveOpen(); S.flow.logged = true; ensureInit(v); S.ret = v; go("form", 0); },
   alHide(){ try { const h = {}; stDeadlines().forEach(x => { h[x.t + x.due] = 1; }); sessionStorage.setItem("stAlertsHide", JSON.stringify(h)); } catch (e) {} renderAlerts(); },
@@ -3923,6 +4111,7 @@ function armIdle(){
 ["click", "keydown", "input", "change"].forEach(ev => document.addEventListener(ev, armIdle, true));
 
 /* ===================== التشغيل ===================== */
+Object.assign(ACT, ACT_TOOLS);
 try { if (/[?&]admin=1\b/.test(location.search)) document.getElementById("jsonBtn").hidden = false; } catch (e) {}
 render(); armIdle(); renderAlerts(); setInterval(renderAlerts, 36e5);
 
