@@ -3370,11 +3370,27 @@ const XS = (() => {
     inpT: {font: f(), fill: {fgColor: {rgb: "FFF9DB"}}, alignment: {horizontal: "right", readingOrder: 2}, border: B},
     calc: {font: f({bold: true}), fill: {fgColor: {rgb: "F2F2F2"}}, numFmt: '#,##0.00;(#,##0.00);"-"', border: B},
     tot: {font: f({bold: true, color: {rgb: "FFFFFF"}}), fill: {fgColor: {rgb: "1F3864"}}, numFmt: '#,##0.00;(#,##0.00);"-"', alignment: {horizontal: "right", readingOrder: 2}, border: B},
-    note: {font: f({sz: 9, color: {rgb: "595959"}}), alignment: {horizontal: "right", wrapText: true, readingOrder: 2}}
+    note: {font: f({sz: 9, color: {rgb: "595959"}}), alignment: {horizontal: "right", wrapText: true, readingOrder: 2}},
+    noteL: {font: f({sz: 9, color: {rgb: "595959"}}), alignment: {horizontal: "right", wrapText: false, readingOrder: 2}}
   };
 })();
 /* يبني ورقة من صفوف: كل خلية {v, s, f(معادلة), t} */
+/* سطور النص الحر (العنوان والملاحظات) بتتحط في عمود «البيان» من غير التفاف وبتتقسم سطور قصيرة، فتمتد على الأعمدة الفاضية جنبها بدل ما تتحشر في عمود الكود */
+function xlFree(rows){
+  const free = new Set([XS.title, XS.sub, XS.note]), out = [];
+  rows.forEach(row => {
+    if (row && row.length === 1 && row[0] && free.has(row[0].s)) {
+      const c = row[0];
+      if (c.s !== XS.note) { out.push([null, Object.assign({}, c, {free: 1})]); return; }
+      const words = String(c.v).split(/\s+/); let line = "";
+      words.forEach(w => { if ((line + " " + w).trim().length > 75) { out.push([null, {v: line.trim(), s: XS.noteL, free: 1}]); line = w; } else line += " " + w; });
+      if (line.trim()) out.push([null, {v: line.trim(), s: XS.noteL, free: 1}]);
+    } else out.push(row);
+  });
+  return out;
+}
 function xlSheet(X, rows, widths){
+  rows = xlFree(rows);
   const ws = {}; let maxC = 0;
   rows.forEach((row, r) => (row || []).forEach((c, ci) => {
     if (c == null) return; maxC = Math.max(maxC, ci);
@@ -3384,7 +3400,9 @@ function xlSheet(X, rows, widths){
     ws[X.utils.encode_cell({r, c: ci})] = o;
   }));
   ws["!ref"] = X.utils.encode_range({s: {r: 0, c: 0}, e: {r: rows.length - 1, c: maxC}});
-  ws["!cols"] = widths.map(w => ({wch: w}));
+  /* عرض كل عمود على قد أطول نص فيه (من غير سطور النص الحر)، بحد أدنى وأقصى، والنص الأطول بيلتف */
+  const len = []; rows.forEach(row => (row || []).forEach((c, ci) => { if (!c || (typeof c === "object" && c.free)) return; const v = typeof c === "object" ? (c.f ? "000,000,000.00" : c.v) : c; const n = typeof v === "number" ? fmt(v).length + 1 : String(v == null ? "" : v).length; len[ci] = Math.max(len[ci] || 0, n); }));
+  ws["!cols"] = widths.map((w, i) => ({wch: Math.max(6, Math.min(55, Math.ceil((len[i] || 4) * 1.1) + 2))}));
   ws["!views"] = [{RTL: true}];
   return ws;
 }
